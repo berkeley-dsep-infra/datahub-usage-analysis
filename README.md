@@ -1,2 +1,4 @@
 # datahub-usage-analysis
-Data &amp; Code from Berkeley's DataHub JupyterHub installation
+Code for Berkeley's DataHub JupyterHub installation anaylsis.
+
+Data is stored in a shared GDrive folder.
