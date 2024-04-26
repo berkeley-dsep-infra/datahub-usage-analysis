@@ -41,7 +41,7 @@ import datetime
 #| editable: true
 #| slideshow: {slide_type: ''}
 #| tags: []
-# opens up the nbgitpuller file - uses gzip to open so need to ensure that file is zipped
+# opens up the nbgitpuller file - uses gzip to open; Please open this file in Stat 20 Hub as it has shared-read drive enabled for admin access
 nbgitpuller_filepath = '/home/jovyan/admins-shared/nbgitpuller-clicks-fall-2023.jsonl.gz'
 # nbgitpuller_filepath_sp24 = '/home/jovyan/admins-shared/nbgitpuller-clicks-sp24.jsonl.gz'
 nbgitpuller_df = pd.read_json(gzip.open(nbgitpuller_filepath), lines = True)
