@@ -1,25 +1,28 @@
 ---
-title: All File Types
+title: Analytics for courses using Datahub during fall 2023
+author: Joanna Yang (Analysis, Viz) and Balaji Alwar (Dashboarding) with support from Ryan Lovett
 jupyter: python3
-format: dashboard
+format:
+  dashboard:
+    logo: images/datahublogo.svg
+    nav-buttons: [github]
+    theme: lumen
+    scrolling: true 
 server: shiny
 ---
 
-```{r}
-library(shiny)
-```
-
-```{python}
-#!pip install pandas
-#!pip install matplotlib
-#!pip install shiny
-```
+## Row
+### Column
 
 ```{python}
 #| editable: true
 #| slideshow: {slide_type: ''}
 #| tags: []
+#| title: Number of nbgitpuller link clicks in a semester categorized by different hubs
 # importing all packages
+#!pip install pandas
+#!pip install matplotlib
+#!pip install shiny
 import pandas as pd
 import gzip
 import re
@@ -31,24 +34,11 @@ import math
 import numpy as np
 import datetime 
 #%matplotlib inline
-```
-
-```{python}
 #!conda env list
-```
-
-```{python}
-#| editable: true
-#| slideshow: {slide_type: ''}
-#| tags: []
-# opens up the nbgitpuller file - uses gzip to open; Please open this file in Stat 20 Hub as it has shared-read drive enabled for admin access
-nbgitpuller_filepath = '/home/jovyan/admins-shared/nbgitpuller-clicks-fall-2023.jsonl.gz'
-# nbgitpuller_filepath_sp24 = '/home/jovyan/admins-shared/nbgitpuller-clicks-sp24.jsonl.gz'
-nbgitpuller_df = pd.read_json(gzip.open(nbgitpuller_filepath), lines = True)
-nbgitpuller_df.head()
-```
-
-```{python}
+nbgitpuller_filename = 'nbgitpuller-clicks-fall-2023.jsonl.gz'
+nbgitpuller_df = pd.read_json(gzip.open(nbgitpuller_filename), lines = True)
+#nbgitpuller_df = pd.read_json("nbgitpuller-clicks-fall-2023.jsonl")
+#nbgitpuller_df.head()
 # obtaining substring after GET and before the redirection
 urls_all = nbgitpuller_df.textPayload.apply(lambda x: x[x.find('GET')+3:x.find('->')].strip())
 
@@ -57,16 +47,7 @@ urls_parsed_all = urls_all.apply(lambda x: urlparse(x))
 
 # uses the parsed urls to obtain the action from the path
 nbgitpuller_df['actions'] = urls_parsed_all.apply(lambda x: os.path.basename(x.path))
-```
-
-```{python}
-nbgitpuller_df.actions.unique()
-```
-
-## For git-pull
-
-```{python}
-# function to determine the filetypes
+#nbgitpuller_df.actions.unique()
 def path_extension_puller(row):
     """
     pandas row function; uses apply
@@ -115,9 +96,7 @@ def repo_parsing(row):
             return row[0].split('/')[-1]
     else:
         return 'NaN'
-```
-
-```{python}
+      
 # makes a new dataframe that only contains git-pull and resets index
 nbgitpuller_df_pull = nbgitpuller_df[nbgitpuller_df.actions == 'git-pull'].reset_index()
 
@@ -164,14 +143,8 @@ nbgitpuller_textPayload_df_pull = pd.DataFrame({'log_info_type': log_info_pull.a
                                            'git_content': git_user_repo_pull,
                                            'git_path': path_extension_pull.apply(lambda x: x[0]),
                                            'file_extension': path_extension_pull.apply(lambda x: x[1]),
-                                           'hub': hub_source_pull})
-```
-
-```{python}
+                                           'hub': hub_source_pull})  
 nbgitpuller_textPayload_df_pull['git_user_content_path'] = nbgitpuller_textPayload_df_pull.apply(lambda x: ''.join(x['git_user_content']) + '/' + ''.join(x['git_path']), axis = 1)
-```
-
-```{python}
 def course_assigner_regex(row):
     """
     pandas row function; uses apply
@@ -228,14 +201,10 @@ def course_assigner_regex(row):
             return git_content_user[key]
     else:
         return 'unknown'
-```
 
-```{python}
 # assigns classes/courses to each log
 nbgitpuller_textPayload_df_pull['course'] = nbgitpuller_textPayload_df_pull.git_user_content_path.apply(course_assigner_regex)
-```
 
-```{python}
 def semester_assigner_regex(row):
     """
     pandas row function; uses apply
@@ -277,50 +246,19 @@ def semester_assigner_regex(row):
             continue
     else:
         return 'unknown'
-```
-
-```{python}
 #| scrolled: true
 # assigns a semester to each log
-nbgitpuller_textPayload_df_pull['semester'] = nbgitpuller_textPayload_df_pull.git_user_content_path.apply(semester_assigner_regex)
-```
-
-```{python}
+nbgitpuller_textPayload_df_pull['semester'] = nbgitpuller_textPayload_df_pull.git_user_content_path.apply(semester_assigner_regex)      
 # transforms timestamp into one and converts from UTC to PST
-nbgitpuller_textPayload_df_pull['timestamp_date_time_pst'] = pd.to_datetime(nbgitpuller_textPayload_df_pull.timestamp_date + ' ' + nbgitpuller_textPayload_df_pull.timestamp_time) - pd.Timedelta(8, unit = 'h')
-```
-
-```{python}
+nbgitpuller_textPayload_df_pull['timestamp_date_time_pst'] = pd.to_datetime(nbgitpuller_textPayload_df_pull.timestamp_date + ' ' + nbgitpuller_textPayload_df_pull.timestamp_time) - pd.Timedelta(8, unit = 'h') 
 # for ones that have NaN as their filetype, check if git_path contains r_studio
 nbgitpuller_textPayload_df_pull['file_extension'] = nbgitpuller_textPayload_df_pull.apply(lambda x: 'rstudio' if 'rstudio' in x['git_path'] else x['file_extension'], axis = 1)
-```
-
-```{python}
 # determines if the links are github or non-github
 nbgitpuller_textPayload_df_pull['abnormal'] = nbgitpuller_textPayload_df_pull.repo.apply(lambda x: 'N' if 'github.com' in x else 'Y')
-```
-
-```{python}
-nbgitpuller_textPayload_df_pull.head()
-```
-
-```{python}
+#nbgitpuller_textPayload_df_pull.head()
 # separates abnormal repos 
 nbgitpuller_textPayload_df_pull_abnormal = nbgitpuller_textPayload_df_pull[nbgitpuller_textPayload_df_pull.abnormal == 'Y']
 nbgitpuller_textPayload_df_pull_normal = nbgitpuller_textPayload_df_pull[nbgitpuller_textPayload_df_pull.abnormal == 'N']
-```
-
-## Graph and Visualizations
-
-### Ideas for Visualizations
-1. Clicks by hub
-2. What times people are accessing the hubs
-3. File types across hubs
-4. Semester usage of hubs
-
-### Github Repos
-
-```{python}
 # clicks by hub for normal
 clicks_by_hub = nbgitpuller_textPayload_df_pull_normal.hub.value_counts()
 fig = plt.figure(figsize = (8,4))
@@ -331,7 +269,9 @@ plt.xticks(rotation = 90)
 plt.title('Clicks by Hub (Github Repos)');
 ```
 
+### Column
 ```{python}
+#| title:  Percentage of nbgitpuller link clicks recorded in the semester categorized by hubs
 # clicks by hub pie chart
 # only take the top 8 and then add the rest
 clicks_by_hub_top8 = dict(clicks_by_hub[:8])
@@ -340,26 +280,15 @@ cm = plt.get_cmap('tab20')
 num_colors = 9
 clicks_by_hub_top8['others'] = clicks_by_hub[8:].sum()
 clicks_by_hub_top8_df = pd.DataFrame(clicks_by_hub_top8.items(), columns = ['hub', 'counts'])
-plt.pie(clicks_by_hub_top8_df.counts, labels = clicks_by_hub_top8_df.hub, autopct='%1.0f%%', textprops={'fontsize': 12, 'color': 'k'}, labeldistance= 1.05, colors= [cm(i) for i in range(num_colors)])
-plt.title('Clicks By Hub (Percentage) - Github Repos', fontsize = 14, color = 'k')
+#plt.title('Clicks By Hub (Percentage) - Github Repos', fontsize = 14, color = 'k')
+plt.pie(clicks_by_hub_top8_df.counts, labels = clicks_by_hub_top8_df.hub, autopct='%1.0f%%', textprops={'fontsize': 12, 'color': 'k'}, labeldistance= 1.05, colors= [cm(i) for i in range(num_colors)]);
+#fig.savefig("images/hub_pie.png", transparent = True)
 ```
 
+## Row
+### Column
 ```{python}
-fig.savefig("images/hub_pie.png", transparent = True)
-```
-
-```{python}
-# filetypes; removed NaN counts; github repos
-file_types_count = nbgitpuller_textPayload_df_pull_normal.file_extension[nbgitpuller_textPayload_df_pull_normal.file_extension != 'NaN'].value_counts()
-fig = plt.figure(figsize=(8,4))
-plt.bar(file_types_count.index, file_types_count)
-plt.xticks(rotation=90)
-plt.xlabel('File Type')
-plt.ylabel('Counts')
-plt.title('File Type By Counts (Github Repos)');
-```
-
-```{python}
+#| title: Count of file type across different Github repositories
 # filetypes across hubs
 hubs = nbgitpuller_textPayload_df_pull_normal.hub.unique()
 total_plots = len(hubs)
@@ -373,52 +302,26 @@ for k in range(total_plots):
     hub_file_filter_df = pd.DataFrame(data = {'file_type': hub_file_filter_key, 'counts': hub_file_filter_count, 'proportions': hub_file_filter_proportion})
     hub_file_filter_df['count_proportion'] = hub_file_filter_df['counts'].astype(str) + ' (' + hub_file_filter_df['proportions'].astype(str) + ')'
     hub_file_filter_df.drop(columns = ['counts', 'proportions'], inplace = True)
-    print(hubs[k])
-    print(hub_file_filter_df)
+#    print(hubs[k])
+#    print(hub_file_filter_df)
 
 # for ax in axes.flatten():
 #     if not ax.get_visible():
 #         ax.set_axis_off()
+# filetypes; removed NaN counts; github repos
+file_types_count = nbgitpuller_textPayload_df_pull_normal.file_extension[nbgitpuller_textPayload_df_pull_normal.file_extension != 'NaN'].value_counts()
+fig = plt.figure(figsize=(8,4))
+plt.bar(file_types_count.index, file_types_count)
+plt.xticks(rotation=90)
+plt.xlabel('File Type')
+plt.ylabel('Counts')
+plt.title('File Type By Counts (Github Repos)');
+
 ```
 
+### Column
 ```{python}
-# looking at the classes
-course_count = nbgitpuller_textPayload_df_pull_normal.course.value_counts()
-figure = plt.figure(figsize = (10,8))
-plt.bar(course_count.index, course_count)
-plt.xticks(rotation = 90, fontsize = 6)
-plt.xlabel('Course')
-plt.ylabel('Count')
-plt.title('Count of Clicks by Course');
-```
-
-```{python}
-# top 10 of the courses
-course_count.head(10)
-```
-
-```{python}
-fig = plt.figure()
-num_colors = 11
-cm = plt.get_cmap('tab20')
-courses_top10 = dict(course_count[:10])
-courses_top10['others'] = course_count[10:].sum()
-courses_top10_df = pd.DataFrame(courses_top10.items(), columns = ['course', 'counts'])
-plt.pie(courses_top10_df.counts, labels = courses_top10_df.course, autopct='%1.0f%%', textprops={'fontsize': 8}, labeldistance= 1.05, 
-        colors= [cm(i) for i in range(num_colors)])
-plt.title('Counts of Clicks by Course - Github Repos', fontsize = 14);
-```
-
-```{python}
-fig.savefig("images/course_pie.png",bbox_inches='tight', transparent = True)
-```
-
-```{python}
-courses_count_by_hub = nbgitpuller_textPayload_df_pull_normal.groupby('hub').course.value_counts()
-courses_count_by_hub.to_csv('courses_count_by_hub.csv')
-```
-
-```{python}
+#| title: "Number of clicks recorded every semester"
 # looking at the semester usage 
 sem_count = nbgitpuller_textPayload_df_pull_normal.semester.value_counts()
 figure = plt.figure(figsize = (8,4))
@@ -429,7 +332,10 @@ plt.ylabel('Count')
 plt.title('Semester Content Count');
 ```
 
+## Row
+### Column
 ```{python}
+#| title: "% of clicks recorded every semester"
 # looking at what times people access the hubs
 fig = plt.figure()
 num_colors = 4
@@ -437,18 +343,18 @@ cm = plt.get_cmap('tab10')
 sem_top7 = dict(sem_count[:3])
 sem_top7['others'] = sem_count[3:].sum()
 sem_top7_df = pd.DataFrame(sem_top7.items(), columns = ['semester', 'counts'])
+#plt.title('Semester Content - Github Repos', fontsize = 14);
 plt.pie(sem_top7_df.counts, labels = sem_top7_df.semester, autopct='%1.0f%%', textprops={'fontsize': 12}, labeldistance= 1.05, 
-        colors= [cm(i) for i in range(num_colors)])
-plt.title('Semester Content - Github Repos', fontsize = 14);
+        colors= [cm(i) for i in range(num_colors)]);
 ```
 
+### Column
 ```{python}
-# looks at date of usage
+#| title: "Hubs usage categorized by Dates"
 date_usage = pd.DataFrame(nbgitpuller_textPayload_df_pull_normal.groupby(by = 'timestamp_date').timestamp_date.count())
 date_usage.rename(columns = {'timestamp_date': 'count'}, inplace = True)
 date_usage = date_usage.reset_index()
 fig,ax = plt.subplots()
-plt.bar(date_usage.timestamp_date, date_usage['count'], color = 'w')
 ax.xaxis.set_major_locator(mdates.MonthLocator())
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
 ax.spines['bottom'].set_color('w')
@@ -459,14 +365,16 @@ ax.tick_params(axis ='x', colors = 'w')
 ax.tick_params(axis ='y', colors = 'w')
 plt.title('Usage by Date', color = 'w', fontsize = 12)
 plt.xlabel('Date', color = 'w', fontsize = 12)
-plt.ylabel('Frequency', color = 'w', fontsize = 12);
+plt.ylabel('Frequency', color = 'w', fontsize = 12)
+plt.bar(date_usage.timestamp_date, date_usage['count'], color = 'w')
+#fig.savefig("images/usage_bar.png",bbox_inches='tight', transparent = True)
 ```
 
+## Row
+### Column
 ```{python}
-fig.savefig("images/usage_bar.png",bbox_inches='tight', transparent = True)
-```
-
-```{python}
+#| title: "Month by month usage frequency"
+#| layout-ncol: 4
 date_usage['timestamp_date'] = date_usage.timestamp_date.astype('datetime64[ns]')
 date_usage['month'] = date_usage['timestamp_date'].apply(lambda x: x.month)
 date_usage['day'] = date_usage['timestamp_date'].apply(lambda x: x.day)
@@ -482,21 +390,17 @@ fig, axes = plt.subplots(total_rows, total_columns, figsize=(10, 10))
 for k in range(total_plots):
     month = date_usage[date_usage['month'] == unique_months[k]].reset_index()
     ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(month['day'], month['count'])
-
     ax.set_title(f'{month_list[unique_months[k]]} Usage Frequency')
     ax.set_xlabel('Date')
     ax.set_ylabel('Frequency')
-
+    ax.bar(month['day'], month['count']);
 #axes[2,1].set_axis_off()
-plt.tight_layout()
+#plt.tight_layout()
+#nbgitpuller_textPayload_df_pull_normal.head()
 ```
-
+### Column
 ```{python}
-nbgitpuller_textPayload_df_pull_normal.head()
-```
-
-```{python}
+#| title: "Hubs usage across different times"
 # looks at date of usage
 nbgitpuller_textPayload_df_pull_normal['timestamp_time'] = pd.to_datetime(nbgitpuller_textPayload_df_pull_normal['timestamp_time'], format = '%H:%M:%S.%f')
 nbgitpuller_textPayload_df_pull_normal['timestamp_time_hour'] = nbgitpuller_textPayload_df_pull_normal['timestamp_time'].apply(lambda x: x.hour)
@@ -515,367 +419,16 @@ ax.tick_params(axis ='y', colors = 'k')
 plt.title('Usage by Time (UTC)', color = 'k')
 plt.xlabel('Hour', color = 'k')
 plt.ylabel('Frequency', color = 'k');
+#fig.savefig("images/time_usage_bar.png",bbox_inches='tight', transparent = True)
 ```
-
-```{python}
-fig.savefig("images/time_usage_bar.png",bbox_inches='tight', transparent = True)
-```
-
-##### Making Graphs of Date of Usage Per Course
-
-```{python}
-# look at usage by courses 1-15
-unique_courses = nbgitpuller_textPayload_df_pull_normal.course.unique()
-
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-```
-
-```{python}
-# look at plots 16-30
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+15]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k+15]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-# axes[2,1].set_axis_off()
-plt.tight_layout()
-```
-
-```{python}
-# look at plots 31-45
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+30]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k+30]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-# axes[2,1].set_axis_off()
-plt.tight_layout()
-```
+## Row
+### Column
 
 ```{python}
 #| editable: true
 #| slideshow: {slide_type: ''}
 #| tags: []
-# look at plots 45-60
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+45]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k+45]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-# axes[2,1].set_axis_off()
-plt.tight_layout()
-```
-
-# look at plots 61-75
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+60]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k+60]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-# axes[2,1].set_axis_off()
-plt.tight_layout()
-
-# look at plots 76-90
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+75]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k+75]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-# axes[2,1].set_axis_off()
-plt.tight_layout()
-
-# look at plots 91-93
-total_plots = 3
-total_columns = 3
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(10, 3))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+90]].reset_index()
-    courses_date = course.groupby(by = 'timestamp_date').timestamp_date.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_date.index, courses_date)
-
-    ax.set_title(f'{unique_courses[k+90]} Usage Frequency')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Frequency')
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-# axes[2,1].set_axis_off()
-plt.tight_layout()
-
-##### Making Graphs of Time of Usage Per Course
-
-# look at usage time by courses 1-15
-unique_courses = nbgitpuller_textPayload_df_pull_normal.course.unique()
-
-
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15), sharex = False)
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-# look at usage time by course 16-30
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+15]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k+15]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-# look at usage time by course 31 - 45
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+30]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k+30]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-# look at usage time by course 46 - 60
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+45]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k+45]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-# look at usage time by course 61 - 75
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+60]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k+60]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-# look at usage time by course 76 - 90
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 15
-total_columns = 5
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(25, 15))
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+75]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k+75]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-# look at usage time by course 91-83
-# length of unique_courses is 93, plotting 15 plots at a time
-total_plots = 3
-total_columns = 3
-total_rows = int(np.ceil(total_plots/total_columns))
-
-fig, axes = plt.subplots(total_rows, total_columns, figsize=(10, 5))
-plt.setp(axes, xlim=(-1,24))
-
-for k in range(total_plots):
-    course = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.course == unique_courses[k+90]].reset_index()
-    course['timestamp_time'] = pd.to_datetime(course['timestamp_time'], format = '%H:%M:%S.%f')
-    course['timestamp_time_hour'] = course['timestamp_time'].apply(lambda x: x.hour)
-    courses_time = course.groupby(by = 'timestamp_time_hour').timestamp_time_hour.count()
-    ax = axes.flatten()[k] if total_plots > 1 else axes # handles single plot cases
-    ax.bar(courses_time.index, courses_time)
-
-    ax.set_title(f'{unique_courses[k+90]} Time Usage Frequency')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    # ax.xaxis.set_major_locator(mdates.MonthLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-
-plt.tight_layout()
-
-### Non-Github Repos
-
-```{python}
-#| editable: true
-#| slideshow: {slide_type: ''}
-#| tags: []
+#| title: "Count of clicks from non github sources across hubs"
 # clicks by hub for abnormal
 clicks_by_hub = nbgitpuller_textPayload_df_pull_abnormal.hub.value_counts()
 fig = plt.figure(figsize = (8,4))
@@ -883,32 +436,36 @@ plt.bar(clicks_by_hub.index, clicks_by_hub)
 plt.xlabel('Hub')
 plt.ylabel('Count')
 plt.xticks(rotation = 90)
-plt.title('Clicks By Hub (Non-Github Repos)');
+plt.title('Count of clicks from non github sources across hubs');
+#len(nbgitpuller_textPayload_df_pull.hub.unique())
 ```
 
-```{python}
-len(nbgitpuller_textPayload_df_pull.hub.unique())
-```
+### Column
 
 ```{python}
+#| title: "Percentage of clicks from non github sources across hubs"
 clicks_by_hub_top6 = dict(clicks_by_hub[:6])
 clicks_by_hub_top6['others'] = clicks_by_hub[6:].sum()
 clicks_by_hub_top6_df = pd.DataFrame(clicks_by_hub_top6.items(), columns = ['hub', 'counts'])
-plt.pie(clicks_by_hub_top6_df.counts, labels = clicks_by_hub_top6_df.hub, autopct='%1.0f%%', textprops={'fontsize': 9}, labeldistance= 1.05)
-plt.title('Clicks By Hub (Percentage) - Non-Github Repos');
+#plt.title('Clicks By Hub (Percentage) - Non-Github Repos');
+plt.pie(clicks_by_hub_top6_df.counts, labels = clicks_by_hub_top6_df.hub, autopct='%1.0f%%', textprops={'fontsize': 9}, labeldistance= 1.05);
 ```
+## Row
+### Column
 
 ```{python}
+#| title: "Count of file types from non-Github repositories"
 file_types_count = nbgitpuller_textPayload_df_pull_abnormal.file_extension[nbgitpuller_textPayload_df_pull_abnormal.file_extension != 'NaN'].value_counts()
 fig = plt.figure(figsize=(8,4))
 plt.bar(file_types_count.index, file_types_count)
 plt.xticks(rotation=90)
 plt.xlabel('File Type')
 plt.ylabel('Counts')
-plt.title('File Type By Counts (Non-Github Repos)');
+plt.title('Count of file types from non-Github repositories');
 ```
-
+### Column
 ```{python}
+#| title: "Clicks from non Github repositories categorized by semester"
 # filetypes across hubs
 hubs = nbgitpuller_textPayload_df_pull_abnormal.hub.unique()
 total_plots = len(hubs)
@@ -922,15 +479,28 @@ for k in range(total_plots):
     hub_file_filter_df = pd.DataFrame(data = {'file_type': hub_file_filter_key, 'counts': hub_file_filter_count, 'proportions': hub_file_filter_proportion})
     hub_file_filter_df['count_proportion'] = hub_file_filter_df['counts'].astype(str) + ' (' + hub_file_filter_df['proportions'].astype(str) + ')'
     hub_file_filter_df.drop(columns = ['counts', 'proportions'], inplace = True)
-    print(hubs[k])
-    print(hub_file_filter_df)
+#    print(hubs[k])
+#    print(hub_file_filter_df)
 
 # for ax in axes.flatten():
 #     if not ax.get_visible():
 #         ax.set_axis_off()
+
+# looking at the semester usage 
+sem_count = nbgitpuller_textPayload_df_pull_abnormal.semester.value_counts()
+figure = plt.figure(figsize=(8, 4))
+plt.bar(sem_count.index, sem_count)
+plt.xticks(rotation=90, fontsize=6)
+plt.xlabel('Semester')
+plt.ylabel('Count')
+plt.title('Semester Content Count');
 ```
 
+## Row
+### Column
+
 ```{python}
+#| title: "Count of clicks from different course repositories"
 # looking at the classes
 course_count = nbgitpuller_textPayload_df_pull_abnormal.course.value_counts()
 figure = plt.figure(figsize = (8,4))
@@ -940,18 +510,3 @@ plt.xlabel('Course')
 plt.ylabel('Count')
 plt.title('Count of Clicks by Course');
 ```
-
-```{python}
-#| editable: true
-#| slideshow: {slide_type: ''}
-#| tags: []
-# looking at the semester usage 
-sem_count = nbgitpuller_textPayload_df_pull_abnormal.semester.value_counts()
-figure = plt.figure(figsize = (8,4))
-plt.bar(sem_count.index, sem_count)
-plt.xticks(rotation = 90, fontsize = 6)
-plt.xlabel('Semester')
-plt.ylabel('Count')
-plt.title('Semester Content Count');
-```
-
