@@ -1,0 +1,38 @@
+name: Test Notebooks
+
+on:
+  push:
+    paths:
+      - '**.ipynb'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install nbconvert nbformat
+
+    - name: Execute notebooks
+      run: |
+        for file in $(find . -type f -name "*.ipynb"); do
+          jupyter nbconvert --ExecutePreprocessor.allow_errors=True --ExecutePreprocessor.timeout=600 --to html "$file"
+        done
+
+    - name: Check for errors
+      run: |
+        for file in $(find . -type f -name "*.html"); do
+          if grep -q "Execution failed" "$file"; then
+            echo "Notebook execution failed: $file"
+            exit 1
+          fi
+        done
