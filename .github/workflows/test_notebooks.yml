@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
@@ -22,10 +22,10 @@ jobs:
       run: |
         pip install nbconvert nbformat
 
-    - name: Execute notebooks
+    - name: Execute changed notebooks
       run: |
-        for file in $(find . -type f -name "*.ipynb"); do
-          jupyter nbconvert --ExecutePreprocessor.allow_errors=True --ExecutePreprocessor.timeout=600 --to html "$file"
+        git diff --name-only HEAD^ HEAD | grep '\.ipynb$' | while read -r file; do
+          jupyter nbconvert --to html --execute "$file"
         done
 
     - name: Check for errors
