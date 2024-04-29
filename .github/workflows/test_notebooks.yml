@@ -25,7 +25,7 @@ jobs:
     - name: Execute changed notebooks
       run: |
         git diff --name-only HEAD^ HEAD | grep '\.ipynb$' | while read -r file; do
-          jupyter nbconvert --to html --execute "$file"
+          jupyter nbconvert --to notebook --execute --inplace "$file"
         done
 
     - name: Check for errors
