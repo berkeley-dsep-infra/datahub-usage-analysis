@@ -9,6 +9,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    container:
+      image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/dev-r-user-image:bbc5f14
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
