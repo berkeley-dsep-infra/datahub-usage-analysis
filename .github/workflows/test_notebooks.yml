@@ -1,7 +1,9 @@
-name: Test Notebooks
+name: Test Jupyter notebooks for errors
 
 on:
   push:
+    branches:
+      - main
     paths:
       - '**.ipynb'
 
@@ -15,6 +17,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -25,15 +29,21 @@ jobs:
       run: |
         pip install nbconvert nbformat
 
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+
     - name: Execute changed notebooks
       run: |
-        git diff --name-only HEAD^ HEAD | grep '\.ipynb$' | while read -r file; do
-          jupyter nbconvert --to notebook --execute --inplace "$file"
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          if [[ $file == *.ipynb ]]; then
+            jupyter nbconvert --to notebook --execute --inplace "$file"
+          fi
         done
 
     - name: Check for errors
       run: |
-        for file in $(find . -type f -name "*.html"); do
+        for file in $(find . -type f -name "*.ipynb"); do
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
             exit 1
