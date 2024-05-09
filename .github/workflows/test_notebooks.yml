@@ -27,7 +27,7 @@ jobs:
       run: |
         gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
         echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | gcloud auth activate-service-account --key-file=-
-        echo $(gcloud auth print-access-token) | docker login -u oauth2accesstoken --password-stdin https://us-central1-docker.pkg.dev
+        gcloud auth print-access-token 2>/dev/null | docker login -u oauth2accesstoken --password-stdin
       env:
         CLOUDSDK_METRICS_ENVIRONMENT: github-actions-setup-gcloud
         CLOUDSDK_METRICS_ENVIRONMENT_VERSION: 2.1.0
