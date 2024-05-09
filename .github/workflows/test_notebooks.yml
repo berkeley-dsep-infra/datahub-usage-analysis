@@ -25,8 +25,8 @@ jobs:
 
     - name: Configure Docker to use gcloud as a credential helper
       run: |
-        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
         echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | gcloud auth activate-service-account --key-file=-
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
         gcloud auth print-access-token 2>/dev/null | docker login -u oauth2accesstoken --password-stdin
       env:
         CLOUDSDK_METRICS_ENVIRONMENT: github-actions-setup-gcloud
