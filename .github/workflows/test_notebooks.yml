@@ -18,7 +18,7 @@ jobs:
         fetch-depth: 0
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/setup-gcloud@master
+      uses: google-github-actions/setup-gcloud@v0
       with:
         service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
         project_id: ucb-datahub-2018
