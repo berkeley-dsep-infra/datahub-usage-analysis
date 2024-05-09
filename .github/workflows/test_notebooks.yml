@@ -1,4 +1,4 @@
-name: Test Jupyter notebooks for errors
+name: Test Jupyter Notebooks
 
 on:
   push:
@@ -11,14 +11,26 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    container:
-      image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        project_id: ucb-datahub-2018
+
+    - name: Configure Docker to use gcloud as a credential helper
+      run: |
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+        echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} | gcloud auth activate-service-account --key-file=-
+        echo $(gcloud auth print-access-token) | docker login -u oauth2accesstoken --password-stdin https://us-central1-docker.pkg.dev
+
+    - name: Pull Docker image
+      run: docker pull us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
 
     - name: Get changed files
       id: changed-files
