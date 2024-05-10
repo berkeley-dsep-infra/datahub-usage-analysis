@@ -43,6 +43,7 @@ jobs:
 
     - name: Execute changed notebooks
       run: |
+        conda init
         conda activate notebook
         for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
           if [[ $file == *.ipynb ]]; then
