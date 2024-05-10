@@ -23,15 +23,13 @@ jobs:
       with:
         service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
         project_id: ucb-datahub-2018
-
-    - name: Configure Docker to use gcloud as a credential helper
-      run: |
-        echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | gcloud auth activate-service-account --account=datahub-usage-analysis-repo-gi@ucb-datahub-2018.iam.gserviceaccount.com --key-file=-
-        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
-        gcloud auth print-access-token 2>/dev/null | docker login -u oauth2accesstoken --password-stdin
-      env:
-        CLOUDSDK_METRICS_ENVIRONMENT: github-actions-setup-gcloud
-        CLOUDSDK_METRICS_ENVIRONMENT_VERSION: 2.1.0
+    
+    - name: Login to GAR
+      uses: docker/login-action@v3
+      with:
+        registry: us-central1-docker.pkg.dev
+        username: _json_key
+        password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
         
     - name: Pull Docker image
       run: docker pull us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
