@@ -1,0 +1,356 @@
+---
+title: Analytics for courses using Datahub during fall 2023
+author: Joanna Yang (Analysis, Viz) and Balaji Alwar (Dashboarding) with support from Ryan Lovett
+jupyter: python3
+format:
+  dashboard:
+    logo: images/datahublogo.svg
+    nav-buttons: [github]
+    theme: lumen
+    scrolling: true 
+server: shiny
+---
+
+## Row
+### Column
+
+```{python}
+#| editable: true
+#| slideshow: {slide_type: ''}
+#| tags: []
+#| title: Number of nbgitpuller link clicks in a semester categorized by different hubs
+# importing all packages
+#!pip install pandas
+#!pip install matplotlib
+#!pip install shiny
+!pip install google-cloud-bigquery
+!pip install pandas-gbq
+
+import pandas as pd
+import gzip
+import re
+from urllib.parse import urlparse, parse_qsl, unquote
+import os
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import math
+import numpy as np
+import datetime 
+#%matplotlib inline
+#!conda env list
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="ucb-datahub-2018-530ec2c2b5f0.json"
+nbgitpuller_filepath = '/home/jovyan/admins-shared/nbgitpuller-clicks-sp24.jsonl.gz'
+nbgitpuller_df = pd.read_json(gzip.open(nbgitpuller_filepath), lines = True)
+from google.cloud import bigquery
+from pandas.io import gbq
+
+project_id = 'ucb-datahub-2018'
+client = bigquery.Client(project=project_id)
+
+# Define SQL query
+query = """
+SELECT table_id
+FROM `ucb-datahub-2018.datahub_spring24.__TABLES_SUMMARY__`
+"""
+
+# Execute query and load data into DataFrame
+tables_df = gbq.read_gbq(query, project_id=project_id)
+
+# print all contents of the tables_df
+tables_df
+# Execute query and load data into DataFrame
+nbgitpuller_df = gbq.read_gbq(query, project_id=project_id)
+#nbgitpuller_df = pd.read_json("nbgitpuller-clicks-fall-2023.jsonl")
+#nbgitpuller_df.head()
+# obtaining substring after GET and before the redirection
+urls_all = nbgitpuller_df.textPayload.apply(lambda x: x[x.find('GET')+3:x.find('->')].strip())
+
+# uses urllib.parse to parse the url into path and query
+urls_parsed_all = urls_all.apply(lambda x: urlparse(x))
+
+# uses the parsed urls to obtain the action from the path
+nbgitpuller_df['actions'] = urls_parsed_all.apply(lambda x: os.path.basename(x.path))
+#nbgitpuller_df.actions.unique()
+def path_extension_puller(row):
+    """
+    pandas row function; uses apply
+    function to pull out select file extensions and urlpaths
+    """
+    row_dict = dict(row)
+    if 'urlpath' in row_dict:
+        key = 'urlpath'
+    elif 'subPath' in row_dict:
+        key = 'subPath'
+    else: 
+        return 'NaN', 'NaN'
+    
+    # files that the analysis is interested in 
+    file_extension_list = ['ipyn[b]?', 'Rmd', 'pdf', 'txt', 'xml', 'ini', 'csv', 'py', 'R', 'md']
+    if len(row_dict[key].split('.')) > 1:
+        file_extension_split_string = row_dict[key].split('.')[-1]
+        for file_extension in file_extension_list:
+            if (len(re.findall(file_extension, file_extension_split_string)) > 0):
+                return row_dict[key], re.findall(file_extension, file_extension_split_string)[-1]
+        else:
+            return row_dict[key], 'NaN'
+    else:
+            return row_dict[key], 'NaN'
+
+def get_repo(row):
+    """
+    pandas row function; uses apply
+    returns repo url from parsed url
+    """
+    for item in row:
+        key, value = item
+        if 'repo' in key:
+            return unquote(value)
+    return 'NaN'
+
+def repo_parsing(row):
+    """
+    pandas row function; uses apply
+    parses the repo url so that it obtains the user and folder/content user is accessing
+    """
+    if row:
+        if len(row[0].split('/')) > 2:
+            return row[0].split('/')[1]
+        else:
+            return row[0].split('/')[-1]
+    else:
+        return 'NaN'
+      
+# makes a new dataframe that only contains git-pull and resets index
+nbgitpuller_df_pull = nbgitpuller_df[nbgitpuller_df.actions == 'git-pull'].reset_index()
+
+# obtains all the log info
+log_info_pull = nbgitpuller_df_pull.textPayload.apply(lambda x: ''.join(re.findall("\[.*\]", x)).replace('[', '').replace(']', '').split(' '))
+
+# retreives the hubs for each textpayload
+hub_source_pull = nbgitpuller_df_pull.resource.apply(lambda x: x['labels']['namespace_name'])
+
+# obtains substring after GET and before the redirection
+urls_pull = nbgitpuller_df_pull.textPayload.apply(lambda x: x[x.find('GET')+3:x.find('->')].strip())
+
+# uses urllib.parse to parse the url into path and query
+urls_parsed_pull = urls_pull.apply(lambda x: urlparse(x))
+
+# uses parsed urls to obtain the action as a quality check
+actions_pull = urls_parsed_pull.apply(lambda x: os.path.basename(x.path))
+
+# breaks apart the parsed query into repo/urlpath
+urls_queries_pull = urls_parsed_pull.apply(lambda x: parse_qsl(x.query))
+
+# getting the file type from urlpath
+path_extension_pull = urls_queries_pull.apply(path_extension_puller)
+
+# gets repo urls from the parsed url
+repos_pull = urls_queries_pull.apply(get_repo)
+
+# extract ones that have github.com in the repo url or else its a null value
+repos_parsed_pull = repos_pull.apply(lambda x: re.findall("github\.com/+(.+)", x) if x else 'NaN')
+
+# obtains the user and git content from github.com repo urls
+git_user_pull = repos_parsed_pull.apply(lambda x: x[0].split('/')[0] if x else 'NaN')
+git_user_repo_pull = repos_parsed_pull.apply(repo_parsing)
+
+# adds it all into a dataframe
+nbgitpuller_textPayload_df_pull = pd.DataFrame({'log_info_type': log_info_pull.apply(lambda x: x[0]),
+                                           'timestamp_date': log_info_pull.apply(lambda x: x[1]),
+                                           'timestamp_time': log_info_pull.apply(lambda x: x[2]),
+                                           'action': actions_pull,
+                                           'git_query': urls_queries_pull,
+                                           'repo': repos_pull,
+                                           'git_user_content': repos_parsed_pull,
+                                           'git_user': git_user_pull,
+                                           'git_content': git_user_repo_pull,
+                                           'git_path': path_extension_pull.apply(lambda x: x[0]),
+                                           'file_extension': path_extension_pull.apply(lambda x: x[1]),
+                                           'hub': hub_source_pull})  
+nbgitpuller_textPayload_df_pull['git_user_content_path'] = nbgitpuller_textPayload_df_pull.apply(lambda x: ''.join(x['git_user_content']) + '/' + ''.join(x['git_path']), axis = 1)
+def course_assigner_regex(row):
+    """
+    pandas row function; uses apply
+    determines which classes and semesters are for each github repo
+    """
+    courses = {'(data8|ds8)': 'data8', '(ds100|data100)': 'data100', '(prob140)': 'data140', #data
+               '(caldataeng|data101|ds101)': 'data101', '(data6|ds6)': 'data6', '(data102|ds102)': 'data102', #data
+               '(data4ac|ds4ac)': 'data4ac', '(data198|ds198)': 'data198',
+               '(cs189|compsci189)': 'compsci189', '(cs170|compsci170)': 'compsci170', #compsci 
+               '(ee16a|eecs16a)': 'eecs16a', '(ee16b|eecs16b)': 'eecs16b', '(eecs127)': 'eecs127',#eecs
+               '(ee120|eleng120)': 'eleng120', #electrical engineering
+               '(physics111b)': 'physics111b', '(physics88)': 'physics88', # physics
+               '(polsci3|ps3|polisci3)': 'polsci3', '(polsci5|ps5)': 'polsci5', '(polsci88|ps88)': 'polsci88', '(ps109|polsci109)': 'polsci109', # polisci
+               '(ce190|civeng90)': 'civgeng190', '(ce93|civeng93)': 'civeng93', '(ce200b|civeng200b)': 'civeng200b', '(ce110|civeng110)': 'civeng110', #civileng
+               '(envecon118|eep118)': 'envecon118', '(eep147|envecon147)': 'envecon147', '(eep153|envecon153)': 'envecon153', #environmental
+               'ph[w]?142': 'pbhlth142', 'ph[w]?251': 'pbhlth251', 'ph[w]?290': 'pbhlth290', 'ph[w]?252': 'pbhlth252', 'ph[w]?253': 'pbhlth253', 'pbhlth250c': 'pbhlth250c',
+               'ph[w]?196': 'pbhlth196', # public health
+               'mcb163l': 'mcellbi163l', 'mcb280': 'mcellbi280', 'mcbc117': 'mcellbic117', 'mcb32': 'mcellbi32', 'mcb288': 'mcellbi288', #molecular cell bio
+               '(bio1b|biology1b)': 'biology1b', # biology
+               'stat88': 'stat88', 'stat157': 'stat157', 'stat159': 'stat159', 'stat131': 'stat131', 'stat135': 'stat135', 'stat20': 'stat20', 
+               'stat150': 'stat150', #stat
+               'math124': 'math124', #math
+               '(demog180)': 'demog180', 'demog[c]?175': 'demog175', #demography
+               '(eps130)': 'eps130', '(eps88)': 'eps88', 'eps256': 'eps256', 'eps24': 'eps24',
+               '(econ140)': 'econ140', '(econ148)': 'econ148', 'econ141': 'econ141', 'econ172': 'econ172', 'econ151': 'econ151', #econ
+               'econ157': 'econ157', 'econ130': 'econ130', 'econ143': 'econ143', 'econ135': 'econ135',
+               '(rbridge)': 'datasci_rbridge', '(midsw241)': 'datasci241', '(midsw203)': 'datasci203', #datasci
+               '(legal123|legalst123)': 'legalst123', '(legalst190|legal190)': 'legalst190', # legal
+               '(es22ac|ethstd22ac)': 'ethstd22ac', '(esc164a|ethstdc164a)': 'ethstdc164a', '(es21ac|ethstd21ac)': 'ethstd21ac',  # ethnic studies
+               'cp201b': 'cyplan201b', '(cityplanning88|cp88)': 'cyplan88', 
+               'ib120': 'integbi120', 'ibc32': 'integbi32', 'ib134l': 'integbi134l',
+               'mse104l': 'matsci104l',
+               'are212': 'aresec212',
+               'educw142': 'educw142',
+               '(cogscic131|psych123)': 'cogscic131', 'psych198': 'psych198',
+               'anth[ro]?115': 'anthro115',
+               'espmc167': 'espmc167', '(ibespm105)': 'espmc105',
+               'ls88': 'ls88',
+               'dighum101': 'dighum101', 'dighum160': 'dighum160',
+               'plantbi135': 'plantbi135',
+               'hist160': 'history160',
+               'soc88': 'sociol88', 'sw282': 'socwel282',
+               'music30': 'music30', 'artw23ac': 'artw23ac'} 
+    # hard coded
+    git_content_user = {'danielabrahamgit120': 'eleng120', 'evalencialopezw142': 'educw142', 'charismasacey[A-Za-z0-9]+cp201': 'cp201a'}
+
+    #strips anything thats not a letter or number
+    git_string_cleaned = re.sub(r'[^a-zA-Z0-9]', '', ''.join(row)).lower()
+    for key in courses:
+        if re.findall(key, git_string_cleaned):
+            return courses[key]
+    for key in git_content_user:
+        if re.findall(key, git_string_cleaned):
+            return git_content_user[key]
+    else:
+        return 'unknown'
+
+# assigns classes/courses to each log
+nbgitpuller_textPayload_df_pull['course'] = nbgitpuller_textPayload_df_pull.git_user_content_path.apply(course_assigner_regex)
+
+def semester_assigner_regex(row):
+    """
+    pandas row function; uses apply
+    returns the semester of the course material if known
+    """
+    semester = [r'fa[ll]*\d{1,4}', r'su[mmer]*\d{1,4}', r'sp[ring]*\d{1,4}', r'\d{1,4}fa[ll]', r'\d{1,4}su[mmer]*', r'\d{1,4}sp[ring]*']
+    sem_match_dict = {'sp': 'spring', 'fa': 'fall', 'su':'summer'}
+
+    git_string_cleaned = re.sub(r'[^a-zA-Z0-9]', '', ''.join(row)).lower()
+
+    year_range = [2018, datetime.datetime.now().year]
+
+    for sem in semester:
+        try:
+            if re.findall(sem, git_string_cleaned):
+                sem_match = re.findall(sem, git_string_cleaned)[-1]
+                sem_match_split = re.split('(\d+)', sem_match)
+                sem_char = re.findall('[a-z]+', sem_match)[-1]
+                sem_year = re.findall('[0-9]+', sem_match)[-1]
+                for key, value in sem_match_dict.items():
+                    if key in sem_char and sem_match_split[-1] == '':
+                        if len(sem_year) < 4:
+                            if year_range[0] <= int(f'20{sem_year[-2:]}') <= year_range[1]:
+                                return f'{value}20{sem_year[-2:]}'
+                            else:
+                                return 
+                        elif len(sem_year) == 4:
+                            if year_range[0] <= int(sem_year) <= year_range[1]:
+                                return f'{value}{sem_year}'
+                            else:
+                                return 'unknown'
+                    elif key in sem_char and sem_match_split[-1] != '':
+                        if year_range[0] <= int(sem_year) <= year_range[1]:
+                            return f'{value}{sem_year}'
+                        else:
+                            return 'unknown'
+        except Exception as e:
+            print(f"Failed findall: {e=} {sem=} {git_string_cleaned=}")
+            continue
+    else:
+        return 'unknown'
+#| scrolled: true
+# assigns a semester to each log
+nbgitpuller_textPayload_df_pull['semester'] = nbgitpuller_textPayload_df_pull.git_user_content_path.apply(semester_assigner_regex)      
+# transforms timestamp into one and converts from UTC to PST
+nbgitpuller_textPayload_df_pull['timestamp_date_time_pst'] = pd.to_datetime(nbgitpuller_textPayload_df_pull.timestamp_date + ' ' + nbgitpuller_textPayload_df_pull.timestamp_time) - pd.Timedelta(8, unit = 'h') 
+# for ones that have NaN as their filetype, check if git_path contains r_studio
+nbgitpuller_textPayload_df_pull['file_extension'] = nbgitpuller_textPayload_df_pull.apply(lambda x: 'rstudio' if 'rstudio' in x['git_path'] else x['file_extension'], axis = 1)
+# determines if the links are github or non-github
+nbgitpuller_textPayload_df_pull['abnormal'] = nbgitpuller_textPayload_df_pull.repo.apply(lambda x: 'N' if 'github.com' in x else 'Y')
+#nbgitpuller_textPayload_df_pull.head()
+# separates abnormal repos 
+nbgitpuller_textPayload_df_pull_abnormal = nbgitpuller_textPayload_df_pull[nbgitpuller_textPayload_df_pull.abnormal == 'Y']
+nbgitpuller_textPayload_df_pull_normal = nbgitpuller_textPayload_df_pull[nbgitpuller_textPayload_df_pull.abnormal == 'N']
+# clicks by hub for normal
+clicks_by_hub = nbgitpuller_textPayload_df_pull_normal.hub.value_counts()
+fig = plt.figure(figsize = (8,4))
+plt.bar(clicks_by_hub.index, clicks_by_hub)
+plt.xlabel('Hub')
+plt.ylabel('Count')
+plt.xticks(rotation = 90)
+plt.title('Clicks by Hub (Github Repos)');
+```
+
+### Column
+```{python}
+#| title:  Percentage of nbgitpuller link clicks recorded in the semester categorized by hubs
+# clicks by hub pie chart
+# only take the top 8 and then add the rest
+clicks_by_hub_top8 = dict(clicks_by_hub[:8])
+fig = plt.figure()
+cm = plt.get_cmap('tab20')
+num_colors = 9
+clicks_by_hub_top8['others'] = clicks_by_hub[8:].sum()
+clicks_by_hub_top8_df = pd.DataFrame(clicks_by_hub_top8.items(), columns = ['hub', 'counts'])
+#plt.title('Clicks By Hub (Percentage) - Github Repos', fontsize = 14, color = 'k')
+plt.pie(clicks_by_hub_top8_df.counts, labels = clicks_by_hub_top8_df.hub, autopct='%1.0f%%', textprops={'fontsize': 12, 'color': 'k'}, labeldistance= 1.05, colors= [cm(i) for i in range(num_colors)]);
+#fig.savefig("images/hub_pie.png", transparent = True)
+```
+
+## Row
+### Column
+```{python}
+#| title: Count of file type across different Github repositories
+# filetypes across hubs
+hubs = nbgitpuller_textPayload_df_pull_normal.hub.unique()
+total_plots = len(hubs)
+total_columns = 4
+total_rows = math.ceil(total_plots/total_columns)
+
+for k in range(total_plots):
+    hub_file_filter_count = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.hub == hubs[k]].file_extension.value_counts().tolist()
+    hub_file_filter_proportion = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.hub == hubs[k]].file_extension.value_counts(normalize = True).mul(100).round(2).tolist()
+    hub_file_filter_key = nbgitpuller_textPayload_df_pull_normal[nbgitpuller_textPayload_df_pull_normal.hub == hubs[k]].file_extension.value_counts().keys().tolist()
+    hub_file_filter_df = pd.DataFrame(data = {'file_type': hub_file_filter_key, 'counts': hub_file_filter_count, 'proportions': hub_file_filter_proportion})
+    hub_file_filter_df['count_proportion'] = hub_file_filter_df['counts'].astype(str) + ' (' + hub_file_filter_df['proportions'].astype(str) + ')'
+    hub_file_filter_df.drop(columns = ['counts', 'proportions'], inplace = True)
+#    print(hubs[k])
+#    print(hub_file_filter_df)
+
+# for ax in axes.flatten():
+#     if not ax.get_visible():
+#         ax.set_axis_off()
+# filetypes; removed NaN counts; github repos
+file_types_count = nbgitpuller_textPayload_df_pull_normal.file_extension[nbgitpuller_textPayload_df_pull_normal.file_extension != 'NaN'].value_counts()
+fig = plt.figure(figsize=(8,4))
+plt.bar(file_types_count.index, file_types_count)
+plt.xticks(rotation=90)
+plt.xlabel('File Type')
+plt.ylabel('Counts')
+plt.title('File Type By Counts (Github Repos)');
+
+```
+
+### Column
+```{python}
+#| title: "Number of clicks recorded every semester"
+# looking at the semester usage 
+sem_count = nbgitpuller_textPayload_df_pull_normal.semester.value_counts()
+figure = plt.figure(figsize = (8,4))
+plt.bar(sem_count.index, sem_count)
+plt.xticks(rotation = 90, fontsize = 6)
+plt.xlabel('Semester')
+plt.ylabel('Count')
+plt.title('Semester Content Count');
+```
