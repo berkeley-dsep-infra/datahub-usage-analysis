@@ -45,16 +45,15 @@ jobs:
       run: |
         for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
           if [[ $file == *.ipynb ]]; then
-    	     if [ ! -f "${file}" ]; then
+             if [ ! -f "${file}" ]; then
         	echo "No such file: '${file}'"
         	exit 1
     	     else
              	echo "Converting: '${file}'"
-             	jupyter nbconvert --to notebook --execute --inplace "$file"
-    	     fi
+                jupyter nbconvert --to notebook --execute --inplace "$file"
+             fi
 	  fi
-
-        done
+      done
 
     - name: Check for errors
       run: |
