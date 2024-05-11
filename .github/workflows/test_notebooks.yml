@@ -11,6 +11,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
+      credentials:
+        username: _json_key
+        password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
     steps:
     - name: Checkout repository
@@ -18,28 +23,9 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-        project_id: ucb-datahub-2018
-    
-    - name: Login to GAR
-      uses: docker/login-action@v3
-      with:
-        registry: us-central1-docker.pkg.dev
-        username: _json_key
-        password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-        
-    - name: Pull Docker image
-      run: docker pull us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
-
     - name: Get changed files
       id: changed-files
       uses: tj-actions/changed-files@v44
-
-    - name: Install Jupyter
-      run: pip install jupyter
 
     - name: Execute changed notebooks
       run: |
@@ -48,7 +34,7 @@ jobs:
             if [[ $file == *.ipynb ]]; then
               echo "Converting: '${file}'"
               jupyter nbconvert --to notebook --execute --inplace "$file"
-             fi
+            fi
           else
             echo "No such file: '${file}'"
           fi
