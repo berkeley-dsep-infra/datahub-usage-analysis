@@ -26,10 +26,11 @@ jobs:
 
     - name: Change directory
       run: |
-        # Change to the GitHub workspace directory where the repository is checked out
-        cd /github/workspace/
-      #  find . -type f -exec sed -i 's|/__w/datahub-usage-analysis/datahub-usage-analysis|/github/workspace/datahub-usage-analysis/datahub-usage-analysis|g' {} +
-
+        for file in $(find /__w/datahub-usage-analysis/datahub-usage-analysis -type f); do
+          new_path="${file/__w/github/workspace}"
+          mkdir -p "$(dirname "$new_path")"
+          mv "$file" "$new_path"
+      done
 
     - name: Get changed files
       id: changed-files
