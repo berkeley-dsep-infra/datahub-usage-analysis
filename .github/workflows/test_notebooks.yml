@@ -30,7 +30,7 @@ jobs:
           new_path="${file/__w/github/workspace}"
           mkdir -p "$(dirname "$new_path")"
           mv "$file" "$new_path"
-      done
+        done
 
     - name: Get changed files
       id: changed-files
