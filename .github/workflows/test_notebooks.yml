@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
-      user: root
+      options: --user root
       credentials:
         username: _json_key
         password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
