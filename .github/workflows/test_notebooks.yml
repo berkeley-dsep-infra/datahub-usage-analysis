@@ -24,10 +24,16 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Change directory
+      run: |
+        # Change to the GitHub workspace directory where the repository is checked out
+        cd /github/workspace/
+      #  find . -type f -exec sed -i 's|/__w/datahub-usage-analysis/datahub-usage-analysis|/github/workspace/datahub-usage-analysis/datahub-usage-analysis|g' {} +
+
+
     - name: Get changed files
       id: changed-files
-      run: |
-        git diff --name-only HEAD^
+      uses: tj-actions/changed-files@v44
 
     - name: Execute changed notebooks
       run: |
