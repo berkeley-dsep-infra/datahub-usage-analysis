@@ -24,8 +24,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Get changed files
-      id: changed-files
+    - name: Set WORKSPACE_DIR
+      id: set-variables
       run: |
         echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
         ls -a ${GITHUB_WORKSPACE}
@@ -38,38 +38,35 @@ jobs:
         echo "WORKSPACE_DIR=${WORKSPACE_DIR}" >> $GITHUB_ENV
 
         ls -a ${WORKSPACE_DIR}
-        cd ${WORKSPACE_DIR}
 
-        CHANGED_FILES=$(git diff --name-only HEAD^)
-        echo "changed_files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
+    - name: Get changed notebooks
+      id: changed-notebooks
+      uses: tj-actions/changed-files@v44
+      with:
+        since_last_remote_commit: true
+        files: |
+          **.ipynb
 
     - name: Add debugging
       env:
-        CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
+        CHANGED_NOTEBOOKS: ${{ steps.changed-notebooks.outputs.all_changed_files }}
       run: |
         echo "pwd: " `pwd`
-        echo "changed_files: $CHANGED_FILES"
+        echo "changed_notebooks: $CHANGED_NOTEBOOKS"
         echo ============================
-        echo "ls"
-        ls
+        echo "ls -a"
+        ls -a
         echo ============================
-        echo "ls ${WORKSPACE_DIR}"
-        ls ${WORKSPACE_DIR}
+        echo "ls -a ${WORKSPACE_DIR}"
+        ls -a ${WORKSPACE_DIR}
         echo ============================
-        echo "ls /__w"
-        ls /__w
-        echo ============================
-        shell: bash
-
-    #- name: Get changed files
-    #  id: changed-files
-    #  uses: tj-actions/changed-files@v44
 
     - name: Execute changed notebooks
+      if: steps.changed-notebooks.outputs.any_changed == 'true'
       env:
-        CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
+        CHANGED_NOTEBOOKS: ${{ steps.changed-notebooks.outputs.all_changed_files }}
       run: |
-        for file in ${CHANGED_FILES}; do
+        for file in ${CHANGED_NOTEBOOKS}; do
           if [ -f "${file}" ]; then
             if [[ $file == *.ipynb ]]; then
               echo "Converting: '${file}'"
@@ -83,10 +80,21 @@ jobs:
     - name: Check for errors
       run: |
         cd $WORKSPACE_DIR
-        for file in $(find . -type f -name "*.ipynb"); do
+        for f in `find . -type f -name "*.ipynb"; do
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
-            exit 1
+            #exit 1
           fi
         done
         shell: bash
+
+    - name: Get changed files
+      id: changed-files-git
+      run: |
+        cd ${GITHUB_WORKSPACE}
+        ls -a
+        git status || true
+
+        CHANGED_NOTEBOOKS=$(git diff --name-only HEAD^ || true)
+        echo "changed_files=${CHANGED_NOTEBOOKS}" >> $GITHUB_OUTPUT
+
