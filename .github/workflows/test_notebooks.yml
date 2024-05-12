@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
-      options: --user root
+      options: --user 1000
       credentials:
         username: _json_key
         password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
@@ -57,6 +57,7 @@ jobs:
         echo ============================
 
     - name: Execute notebooks
+      shell: bash
       run: |
         ls -a
         for file in test_notebooks/* ; do
@@ -66,6 +67,7 @@ jobs:
         done  
 
     - name: Check for errors
+      shell: bash
       run: |
         cd $WORKSPACE_DIR
         for file in test_notebooks/* ; do
