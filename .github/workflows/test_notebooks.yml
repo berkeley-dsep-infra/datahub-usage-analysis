@@ -28,32 +28,31 @@ jobs:
       id: changed-files
       run: |
         echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
-        if [ -d $GITHUB_WORKSPACE ]; then
-          cd $GITHUB_WORKSPACE
-          echo "::set-output name=workspace_dir::${GITHUB_WORKSPACE}"
-        else
-          echo GITHUB_WORKSPACE does not exist
-          echo REPO_FULL_NAME="${{ github.repository }}"
-          REPO_FULL_NAME="${{ github.repository }}"
-          echo REPO_NAME="${REPO_FULL_NAME#*/}"
-          REPO_NAME="${REPO_FULL_NAME#*/}"
-          cd /__w/${REPO_NAME}/${REPO_NAME}
-          echo "::set-output name=workspace_dir::/__w/${REPO_NAME}/${REPO_NAME}"
-        fi
+        ls -a ${GITHUB_WORKSPACE}
+
+        echo REPO_FULL_NAME="${{ github.repository }}"
+        REPO_FULL_NAME="${{ github.repository }}"
+        echo REPO_NAME="${REPO_FULL_NAME#*/}"
+        REPO_NAME="${REPO_FULL_NAME#*/}"
+        workspace_dir="/__w/${REPO_NAME}/${REPO_NAME}"
+        ls -a ${workspace_dir}
+
+        cd ${workspace_dir}
+        echo "workspace_dir=${workspace_dir}" >> $GITHUB_ENV
+
         CHANGED_FILES=$(git diff --name-only HEAD^)
-        echo "::set-output name=all_changed_files::${CHANGED_FILES}"
+        echo "all_changed_files=${CHANGED_FILES}" >> $GITHUB_ENV
 
     - name: Add debugging
       run: |
         echo "pwd: " `pwd`
-        echo "${{ steps.changed-files.outputs.all_changed_files }}"
-        echo "steps.changed-files.outputs.all_changed_files:" "${{ steps.changed-files.outputs.all_changed_files }}"
+        echo "all_changed_files: ${all_changed_files}"
         echo ============================
         echo "ls"
         ls
         echo ============================
-        echo "ls ${{ steps.changed-files.outputs.workspace_dir }}"
-        ls ${{ steps.changed-files.outputs.workspace_dir }}
+        echo "ls ${workspace_dir}"
+        ls ${workspace_dir}
         echo ============================
         echo "ls /__w"
         ls /__w
@@ -66,7 +65,7 @@ jobs:
 
     - name: Execute changed notebooks
       run: |
-        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+        for file in ${all_changed_files}; do
           if [ -f "${file}" ]; then
             if [[ $file == *.ipynb ]]; then
               echo "Converting: '${file}'"
@@ -79,9 +78,11 @@ jobs:
 
     - name: Check for errors
       run: |
+        cd $workspace_dir
         for file in $(find . -type f -name "*.ipynb"); do
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
             exit 1
           fi
         done
+        shell: bash
