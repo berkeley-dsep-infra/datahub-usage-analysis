@@ -24,18 +24,33 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Change directory
-      run: |
-        for file in $(find /__w/datahub-usage-analysis/datahub-usage-analysis -type f); do
-          new_path="${file/__w/github/workspace}"
-          mkdir -p "$(dirname "$new_path")"
-          mv "$file" "$new_path"
-        done
-        shell: bash
-
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v44
+      run: |
+        cd $GITHUB_WORKSPACE  # $GITHUB_WORKSPACE points to the directory where your repository is checked out
+        CHANGED_FILES=$(git diff --name-only HEAD^)
+        echo "::set-output name=all_changed_files::${CHANGED_FILES}"
+
+    - name: Add debugging
+      run: |
+        echo "pwd: " `pwd`
+        echo "${{ steps.changed-files.outputs.all_changed_files }}"
+        echo "steps.changed-files.outputs.all_changed_files:" "${{ steps.changed-files.outputs.all_changed_files }}"
+        echo ============================
+        echo "ls"
+        ls
+        echo ============================
+        echo "ls $GITHUB_WORKSPACE"
+        ls $GITHUB_WORKSPACE
+        echo ============================
+        echo "ls /__w"
+        ls /__w
+        echo ============================
+        shell: bash
+
+    #- name: Get changed files
+    #  id: changed-files
+    #  uses: tj-actions/changed-files@v44
 
     - name: Execute changed notebooks
       run: |
