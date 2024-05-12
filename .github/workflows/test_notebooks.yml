@@ -64,7 +64,6 @@ jobs:
           if [ ! -f "${file}" ]; then continue ; fi
           jupyter nbconvert --to notebook --execute --inplace "$file" || echo FAILED: "${file}"
         done  
-        shell: bash
 
     - name: Check for errors
       run: |
@@ -76,7 +75,6 @@ jobs:
             #exit 1
           fi
         done
-        shell: bash
 
     - name: Get changed files
       id: changed-files-git
