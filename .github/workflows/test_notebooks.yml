@@ -61,7 +61,7 @@ jobs:
         ls -a
         for file in test_notebooks/* ; do
           echo "Converting: '${file}'"
-          jupyter nbconvert --to notebook --execute --inplace "$file"
+          jupyter nbconvert --to notebook --execute --inplace "$file" || echo FAILED: "${file}"
         done  
 
     - name: Check for errors
