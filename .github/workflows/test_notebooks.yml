@@ -21,8 +21,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     #- name: Get changed notebooks
     #  id: changed-notebooks
@@ -48,11 +46,8 @@ jobs:
         ls -a ${WORKSPACE_DIR}
 
     - name: Add debugging
-      #env:
-      #  CHANGED_NOTEBOOKS: ${{ steps.changed-notebooks.outputs.all_changed_files }}
       run: |
         echo "pwd: " `pwd`
-      #  echo "changed_notebooks: $CHANGED_NOTEBOOKS"
         echo ============================
         echo "ls -a"
         ls -a
@@ -62,10 +57,8 @@ jobs:
         echo ============================
 
     - name: Execute changed notebooks
-      #if: steps.changed-notebooks.outputs.any_changed == 'true'
-      #env:
-      #  CHANGED_NOTEBOOKS: ${{ steps.changed-notebooks.outputs.all_changed_files }}
       run: |
+        ls -a
         for file in test_notebooks/* ; do
           if [ -f "${file}" ]; then
             if [[ "$file" == *.ipynb ]]; then
