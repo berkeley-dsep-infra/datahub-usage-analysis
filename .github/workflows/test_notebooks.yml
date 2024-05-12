@@ -61,13 +61,16 @@ jobs:
         ls -a
         for file in test_notebooks/* ; do
           echo "Converting: '${file}'"
+          if [ ! -f "${file}" ]; then continue ; fi
           jupyter nbconvert --to notebook --execute --inplace "$file" || echo FAILED: "${file}"
         done  
+        shell: bash
 
     - name: Check for errors
       run: |
         cd $WORKSPACE_DIR
         for file in test_notebooks/* ; do
+          if [ ! -f "${file}" ]; then continue ; fi
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
             #exit 1
