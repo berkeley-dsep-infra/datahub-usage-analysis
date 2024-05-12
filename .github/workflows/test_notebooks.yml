@@ -24,6 +24,14 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Get changed notebooks
+      id: changed-notebooks
+      uses: tj-actions/changed-files@v44
+      with:
+        since_last_remote_commit: true
+        files: |
+          **.ipynb
+
     - name: Set WORKSPACE_DIR
       id: set-variables
       run: |
@@ -38,14 +46,6 @@ jobs:
         echo "WORKSPACE_DIR=${WORKSPACE_DIR}" >> $GITHUB_ENV
 
         ls -a ${WORKSPACE_DIR}
-
-    - name: Get changed notebooks
-      id: changed-notebooks
-      uses: tj-actions/changed-files@v44
-      with:
-        since_last_remote_commit: true
-        files: |
-          **.ipynb
 
     - name: Add debugging
       env:
