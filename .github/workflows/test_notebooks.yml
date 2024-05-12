@@ -56,24 +56,18 @@ jobs:
         ls -a ${WORKSPACE_DIR}
         echo ============================
 
-    - name: Execute changed notebooks
+    - name: Execute notebooks
       run: |
         ls -a
         for file in test_notebooks/* ; do
-          if [ -f "${file}" ]; then
-            if [[ "$file" == *.ipynb ]]; then
-              echo "Converting: '${file}'"
-              jupyter nbconvert --to notebook --execute --inplace "$file"
-            fi
-          else
-            echo "No such file: '${file}'"
-          fi
+          echo "Converting: '${file}'"
+          jupyter nbconvert --to notebook --execute --inplace "$file"
         done  
 
     - name: Check for errors
       run: |
         cd $WORKSPACE_DIR
-        for f in `find . -type f -name "*.ipynb"; do
+        for file in test_notebooks/* ; do
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
             #exit 1
