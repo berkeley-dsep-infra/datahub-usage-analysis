@@ -41,12 +41,12 @@ jobs:
         echo "workspace_dir=${workspace_dir}" >> $GITHUB_ENV
 
         CHANGED_FILES=$(git diff --name-only HEAD^)
-        echo "all_changed_files=${CHANGED_FILES}" >> $GITHUB_ENV
+        echo "all_changed_files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
 
     - name: Add debugging
       run: |
         echo "pwd: " `pwd`
-        echo "all_changed_files: ${all_changed_files}"
+        echo "all_changed_files: ${{ steps.changed-files.outputs.all_changed_file }}"
         echo ============================
         echo "ls"
         ls
