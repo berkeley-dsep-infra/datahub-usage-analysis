@@ -27,7 +27,19 @@ jobs:
     - name: Get changed files
       id: changed-files
       run: |
-        cd $GITHUB_WORKSPACE  # $GITHUB_WORKSPACE points to the directory where your repository is checked out
+        echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
+        if [ -d $GITHUB_WORKSPACE ]; then
+          cd $GITHUB_WORKSPACE
+          echo "::set-output name=workspace_dir::${GITHUB_WORKSPACE}"
+        else
+          echo GITHUB_WORKSPACE does not exist
+          echo REPO_FULL_NAME="${{ github.repository }}"
+          REPO_FULL_NAME="${{ github.repository }}"
+          echo REPO_NAME="${REPO_FULL_NAME#*/}"
+          REPO_NAME="${REPO_FULL_NAME#*/}"
+          cd /__w/${REPO_NAME}/${REPO_NAME}
+          echo "::set-output name=workspace_dir::/__w/${REPO_NAME}/${REPO_NAME}"
+        fi
         CHANGED_FILES=$(git diff --name-only HEAD^)
         echo "::set-output name=all_changed_files::${CHANGED_FILES}"
 
@@ -40,8 +52,8 @@ jobs:
         echo "ls"
         ls
         echo ============================
-        echo "ls $GITHUB_WORKSPACE"
-        ls $GITHUB_WORKSPACE
+        echo "ls ${{ steps.changed-files.outputs.workspace_dir }}"
+        ls ${{ steps.changed-files.outputs.workspace_dir }}
         echo ============================
         echo "ls /__w"
         ls /__w
