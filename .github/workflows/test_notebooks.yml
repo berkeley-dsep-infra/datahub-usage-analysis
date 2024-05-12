@@ -30,29 +30,31 @@ jobs:
         echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
         ls -a ${GITHUB_WORKSPACE}
 
-        echo REPO_FULL_NAME="${{ github.repository }}"
         REPO_FULL_NAME="${{ github.repository }}"
-        echo REPO_NAME="${REPO_FULL_NAME#*/}"
+        echo REPO_FULL_NAME="${REPO_FULL_NAME}"
         REPO_NAME="${REPO_FULL_NAME#*/}"
-        workspace_dir="/__w/${REPO_NAME}/${REPO_NAME}"
-        ls -a ${workspace_dir}
+        echo REPO_NAME="${REPO_NAME}"
+        WORKSPACE_DIR="/__w/${REPO_NAME}/${REPO_NAME}"
+        echo "WORKSPACE_DIR=${WORKSPACE_DIR}" >> $GITHUB_ENV
 
-        cd ${workspace_dir}
-        echo "workspace_dir=${workspace_dir}" >> $GITHUB_ENV
+        ls -a ${WORKSPACE_DIR}
+        cd ${WORKSPACE_DIR}
 
         CHANGED_FILES=$(git diff --name-only HEAD^)
-        echo "all_changed_files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
+        echo "changed_files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
 
     - name: Add debugging
+      env:
+        CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
       run: |
         echo "pwd: " `pwd`
-        echo "all_changed_files: ${{ steps.changed-files.outputs.all_changed_file }}"
+        echo "changed_files: $CHANGED_FILES"
         echo ============================
         echo "ls"
         ls
         echo ============================
-        echo "ls ${workspace_dir}"
-        ls ${workspace_dir}
+        echo "ls ${WORKSPACE_DIR}"
+        ls ${WORKSPACE_DIR}
         echo ============================
         echo "ls /__w"
         ls /__w
@@ -64,8 +66,10 @@ jobs:
     #  uses: tj-actions/changed-files@v44
 
     - name: Execute changed notebooks
+      env:
+        CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
       run: |
-        for file in ${all_changed_files}; do
+        for file in ${CHANGED_FILES}; do
           if [ -f "${file}" ]; then
             if [[ $file == *.ipynb ]]; then
               echo "Converting: '${file}'"
@@ -78,7 +82,7 @@ jobs:
 
     - name: Check for errors
       run: |
-        cd $workspace_dir
+        cd $WORKSPACE_DIR
         for file in $(find . -type f -name "*.ipynb"); do
           if grep -q "Execution failed" "$file"; then
             echo "Notebook execution failed: $file"
