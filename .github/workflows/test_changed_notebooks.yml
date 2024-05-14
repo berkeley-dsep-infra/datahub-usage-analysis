@@ -33,6 +33,7 @@ jobs:
       run: |
         cd ${GITHUB_WORKSPACE}
         ls -a
+        chown -R root .
         git status || true
         # Captures changed Jupyter notebooks between the last commit and the previous one
         CHANGED_NOTEBOOKS=$(git diff --name-only HEAD^ || true)
