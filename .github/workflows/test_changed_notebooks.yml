@@ -1,0 +1,62 @@
+name: Test Jupyter Notebooks
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+    paths:
+      - '**.ipynb'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.ipynb'
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: us-central4-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:4497642d
+      options: --user root
+      credentials:
+        username: _json_key
+        password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get changed files
+      id: changed-files-git
+      run: |
+        cd ${GITHUB_WORKSPACE}
+        ls -a
+        chown -R root .
+        git status || true
+        # Captures changed Jupyter notebooks between the last commit and the previous one
+        CHANGED_NOTEBOOKS=$(git diff --name-only HEAD^ || true)
+        echo "changed_files=${CHANGED_NOTEBOOKS}" >> $GITHUB_OUTPUT
+
+    - name: Execute changed notebooks
+      if: steps.changed-files-git.outputs.changed_files
+      run: |
+        echo "Changed Notebooks: ${CHANGED_NOTEBOOKS}"
+        for file in $CHANGED_NOTEBOOKS; do
+          if [[ $file == *.ipynb ]]; then
+            echo "Executing notebook: $file"
+            jupyter nbconvert --to notebook --execute --inplace "$file" || echo "FAILED: ${file}"
+          fi
+        done
+
+    - name: Check for errors
+      run: |
+        for file in $CHANGED_NOTEBOOKS; do
+          if [[ $file == *.ipynb && -f "$file" ]]; then
+            if grep -q "Execution failed" "$file"; then
+              echo "Notebook execution failed: $file"
+              exit 1
+            fi
+          fi
+        done
