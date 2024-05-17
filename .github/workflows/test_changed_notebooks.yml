@@ -1,4 +1,4 @@
-name: Test Jupyter Notebooks
+name: Execute Jupyter Notebooks With Changes
 
 on:
   workflow_dispatch: 
