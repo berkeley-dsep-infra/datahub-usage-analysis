@@ -105,3 +105,9 @@ venv.bak/
 
 # ignore vscode
 .vscode/*
+
+# default path for notebooks/nbgitpuller_processing_visualization.ipynb image output
+images/
+
+# an output file of notebooks/nbgitpuller_processing_visualization.ipynb
+notebooks/courses_count_by_hub.csv

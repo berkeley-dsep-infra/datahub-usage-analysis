@@ -1,0 +1,6 @@
+pandas
+matplotlib
+numpy
+ipython
+google-cloud-bigquery
+pandas-gbq
