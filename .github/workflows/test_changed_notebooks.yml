@@ -12,8 +12,6 @@ on:
       - main
     paths:
       - '**.ipynb'
-
-
 jobs:
   test:
     runs-on: ubuntu-latest
