@@ -2,11 +2,6 @@ name: Execute Jupyter Notebooks With Changes
 
 on:
   workflow_dispatch: 
-  push:
-    branches:
-      - main
-    paths:
-      - '**.ipynb'
   pull_request:
     branches:
       - main
