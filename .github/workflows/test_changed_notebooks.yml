@@ -11,7 +11,7 @@ jobs:
   test-changed-notebooks:
     runs-on: ubuntu-latest
     container:
-      image: us-central4-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image:ab048e5
+      image: us-central1-docker.pkg.dev/ucb-datahub-2018/user-images/data100-user-image@sha256:a5ac1fd44d1a978b5d19c07996db87fd3e7e3291644c5d448d0d68450763a4db
       options: --user root
       credentials:
         username: _json_key
