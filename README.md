@@ -101,11 +101,11 @@ upstream	git@github.com:berkeley-dsep-infra/datahub-usage-analysis.git (push)
 
 The raw commands to copy and paste are below:
 ```
-$ cd datahub-usage-analysis
-$ git remote -v
-$ git remote rename origin upstream
-$ git remote add origin git@github.com:<your github username>/datahub-usage-analysis.git
-$ git remote -v
+cd datahub-usage-analysis
+git remote -v
+git remote rename origin upstream
+git remote add origin git@github.com:<your github username>/datahub-usage-analysis.git
+git remote -v
 ```
 
 Now you can sync your local repo from `upstream`, and push those changes to
