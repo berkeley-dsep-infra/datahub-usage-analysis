@@ -13,7 +13,7 @@ If you've created `ssh` keys previously, please skip to the next step.
 If you're running Ubuntu, regular installation/VM or WSL2, and have NOT
 previously generated SSH keys please execute the following commands:
 ```
-ssh-keygen -t id_rsa -b 8192
+ssh-keygen -t rsa -b 8192
 ```
 For added security, you can choose to enter a passphrase during key creation.
 This is optional.
@@ -22,7 +22,7 @@ This is optional.
 If you're using macos, and have NOT previously generated SSH keys please
 execute the following commands:
 ```
-ssh-keygen -t id_rsa -b 8192
+ssh-keygen -t rsa -b 8192
 ```
 For added security, you can choose to enter a passphrase during key creation.
 This is optional.
@@ -35,7 +35,7 @@ Open a terminal, and run the following command.  WSL2 is preferred, but there
 are a few additional steps required.
 
 ```
-ssh-keygen -t id_rsa -b 8192
+ssh-keygen -t rsa -b 8192
 ```
 For added security, you can choose to enter a passphrase during key creation.
 This is optional.
