@@ -113,7 +113,7 @@ your fork (`origin`):
 ```
 git checkout main && \
 git fetch --prune --all && \
-git rebase main/staging && \
+git rebase upstream/main && \
 git push origin main
 ```
 
@@ -125,10 +125,10 @@ because other contributors may have pushed changes after you last synced with
 this repo.
 
 ```
-git checkout staging && \
+git checkout main && \
 git fetch --prune --all && \
-git rebase upstream/staging && \
-git push origin staging
+git rebase upstream/main && \
+git push origin main
 ```
 
 To create a new feature branch and switch to it, run the following command:
