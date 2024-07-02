@@ -79,7 +79,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
 
         headersinput = {
         "app_id": "13eb564e",
-        "app_key": "74e1f260b527e7655628220a5de615c6",
+        "app_key": "",
         }
 
         response = requests.get(full_url, headers = headersinput)
@@ -105,7 +105,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
 
         headersinput = {
         "app_id": "13eb564e",
-        "app_key": "74e1f260b527e7655628220a5de615c6",
+        "app_key": "",
         }
         response = requests.get(full_url, headers = headersinput)
 
