@@ -54,12 +54,11 @@ You can run the script in two ways:
 
 1. **Using `main` for `argparse`**:
     - Is it acceptable to have the `refactor_testing_query_courseid.py` file implement `main` to handle `argparse`, or would you prefer not to include the `main` method inside this script?
-      
+
 
 2. **Interactive Input Option**:
     -Is it appropriate to keep the interactive input method for term ID and class names? This method could be useful for new users to understand the required arguments.
-   
+
 
 4. **Class-Based Structure**:
     -Would it be better to refactor the script to use a class with methods instead of standalone functions, considering that the primary method to be used by the user is `getCourseInformation`?
-
