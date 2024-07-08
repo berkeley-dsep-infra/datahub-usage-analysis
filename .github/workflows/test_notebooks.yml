@@ -1,7 +1,7 @@
 name: Test Jupyter Notebooks
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -19,72 +19,71 @@ jobs:
         password: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    #- name: Get changed notebooks
-    #  id: changed-notebooks
-    #  uses: tj-actions/changed-files@v44
-    #  with:
-    #    since_last_remote_commit: true
-    #    files: |
-    #      **.ipynb
+      #- name: Get changed notebooks
+      #  id: changed-notebooks
+      #  uses: tj-actions/changed-files@v44
+      #  with:
+      #    since_last_remote_commit: true
+      #    files: |
+      #      **.ipynb
 
-    - name: Set WORKSPACE_DIR
-      id: set-variables
-      run: |
-        echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
-        ls -a ${GITHUB_WORKSPACE}
+      - name: Set WORKSPACE_DIR
+        id: set-variables
+        run: |
+          echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
+          ls -a ${GITHUB_WORKSPACE}
 
-        REPO_FULL_NAME="${{ github.repository }}"
-        echo REPO_FULL_NAME="${REPO_FULL_NAME}"
-        REPO_NAME="${REPO_FULL_NAME#*/}"
-        echo REPO_NAME="${REPO_NAME}"
-        WORKSPACE_DIR="/__w/${REPO_NAME}/${REPO_NAME}"
-        echo "WORKSPACE_DIR=${WORKSPACE_DIR}" >> $GITHUB_ENV
+          REPO_FULL_NAME="${{ github.repository }}"
+          echo REPO_FULL_NAME="${REPO_FULL_NAME}"
+          REPO_NAME="${REPO_FULL_NAME#*/}"
+          echo REPO_NAME="${REPO_NAME}"
+          WORKSPACE_DIR="/__w/${REPO_NAME}/${REPO_NAME}"
+          echo "WORKSPACE_DIR=${WORKSPACE_DIR}" >> $GITHUB_ENV
 
-        ls -a ${WORKSPACE_DIR}
+          ls -a ${WORKSPACE_DIR}
 
-    - name: Add debugging
-      run: |
-        echo "pwd: " `pwd`
-        echo ============================
-        echo "ls -a"
-        ls -a
-        echo ============================
-        echo "ls -a ${WORKSPACE_DIR}"
-        ls -a ${WORKSPACE_DIR}
-        echo ============================
+      - name: Add debugging
+        run: |
+          echo "pwd: " `pwd`
+          echo ============================
+          echo "ls -a"
+          ls -a
+          echo ============================
+          echo "ls -a ${WORKSPACE_DIR}"
+          ls -a ${WORKSPACE_DIR}
+          echo ============================
 
-    - name: Execute notebooks
-      shell: bash
-      run: |
-        ls -a
-        for file in test_notebooks/* ; do
-          echo "Converting: '${file}'"
-          if [ ! -f "${file}" ]; then continue ; fi
-          jupyter nbconvert --to notebook --execute --inplace "$file" || echo FAILED: "${file}"
-        done  
+      - name: Execute notebooks
+        shell: bash
+        run: |
+          ls -a
+          for file in test_notebooks/* ; do
+            echo "Converting: '${file}'"
+            if [ ! -f "${file}" ]; then continue ; fi
+            jupyter nbconvert --to notebook --execute --inplace "$file" || echo FAILED: "${file}"
+          done
 
-    - name: Check for errors
-      shell: bash
-      run: |
-        cd $WORKSPACE_DIR
-        for file in test_notebooks/* ; do
-          if [ ! -f "${file}" ]; then continue ; fi
-          if grep -q "Execution failed" "$file"; then
-            echo "Notebook execution failed: $file"
-            #exit 1
-          fi
-        done
+      - name: Check for errors
+        shell: bash
+        run: |
+          cd $WORKSPACE_DIR
+          for file in test_notebooks/* ; do
+            if [ ! -f "${file}" ]; then continue ; fi
+            if grep -q "Execution failed" "$file"; then
+              echo "Notebook execution failed: $file"
+              #exit 1
+            fi
+          done
 
-    - name: Get changed files
-      id: changed-files-git
-      run: |
-        cd ${GITHUB_WORKSPACE}
-        ls -a
-        git status || true
+      - name: Get changed files
+        id: changed-files-git
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          ls -a
+          git status || true
 
-        CHANGED_NOTEBOOKS=$(git diff --name-only HEAD^ || true)
-        echo "changed_files=${CHANGED_NOTEBOOKS}" >> $GITHUB_OUTPUT
-
+          CHANGED_NOTEBOOKS=$(git diff --name-only HEAD^ || true)
+          echo "changed_files=${CHANGED_NOTEBOOKS}" >> $GITHUB_OUTPUT
