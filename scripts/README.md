@@ -5,16 +5,15 @@
 1. **Credential Management**:
    - Removed private credentials from the script. Users must now set (Windows) or export (Mac) their API user ID and key in the command line before running `query_courseid.py`.
 
-   **For Mac (bash)**:
+   **Datahub terminal (bash)**:
    ```bash
    export APP_ID='your_app_id'
    export APP_KEY='your_app_key'
    ```
-
-   **For Windows (cmd)**:
-   ```bash
-   set APP_ID='your_app_id'
-   set APP_KEY='your_app_key'
+ **Test enviornement credentential with:**
+    ```bash
+    echo $APP_ID
+    echo $APP_KEY
    ```
 
 2. **Enhanced Script Structure**:
