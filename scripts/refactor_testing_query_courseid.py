@@ -22,9 +22,11 @@ def extract_pattern(s):
         return f"{remaining} {char}{numbers}"
 
 def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
+    
     if class_name == "unknown":
         error_string = "Class name is unknown. Please enter a valid class name."
         return json.dumps(error_string, indent=4)
+        
     elif not has_digits(class_name):
         error_string = f"Class name {class_name} is invalid. Please enter a valid class name."
         return json.dumps(error_string, indent=4)
@@ -61,12 +63,15 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
             "department": classes[0]['course']['subjectArea']['description'],
             "enrollment_count": sum(section['aggregateEnrollmentStatus']['enrolledCount'] for section in classes)
         }
-        return json.dumps(extracted_info, indent=4)
+        # Creating a new JSON object with the extracted information
+        return_json = json.dumps(extracted_info, indent=4)
+        print(return_json)
+        return return_json
     
     elif check_pattern(class_name):
         desired_display_name = extract_pattern(class_name)
         subject_area_code, number = desired_display_name.split()
-        full_url = base_url + f"term-id={term_id}&subject-area-code={subject_area_code}&catalog-number={number}&page-number={page_number}&page-size={page_size}"
+        full_url = base_url + f"term-id={term_id}&subject-area-code={subject_area_code}&catalog-number={number}&page-number {page_number}&page-size={page_size}"
 
         response = requests.get(full_url, headers=headers)
         if response.status_code == 200:
@@ -114,7 +119,7 @@ def main():
 
     else:
         term_id = args.term_id
-        class_names = args.class_name
+        class_names = args.class_names
 
     for class_name in args.class_names:
         result = getCourseInformation(args.term_id, class_name)

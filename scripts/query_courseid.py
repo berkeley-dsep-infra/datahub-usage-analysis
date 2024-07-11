@@ -69,6 +69,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
         return_json = json.dumps(extracted_info, indent=4)
         print(return_json)
         return return_json
+        
     elif check_pattern(class_name) == True:
         desired_display_name = extract_pattern(class_name)
         subject_area_code = desired_display_name.split()[0].upper()
