@@ -101,7 +101,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch course information based on term ID and class name.")
-    parser.add_argument('term_id', type=str, help="The term ID (e.g., '2232').")
+    parser.add_argument('term_id', type=str, nargs='?', help="The term ID (e.g., '2232').")
     parser.add_argument('class_names', type=str, nargs='*', help="One or more class names (e.g., 'data8', 'compsci189').")
     
     args = parser.parse_args()
@@ -111,6 +111,10 @@ def main():
         class_names = input("Please enter the class names (separated by commas): ").split(',')
         args.term_id = term_id
         args.class_names = [class_name.strip() for class_name in class_names]
+
+    else:
+        term_id = args.term_id
+        class_names = args.class_name
 
     for class_name in args.class_names:
         result = getCourseInformation(args.term_id, class_name)

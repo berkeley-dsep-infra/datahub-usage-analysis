@@ -3,7 +3,7 @@
 ## Updates
 
 1. **Credential Management**:
-   - Removed private credentials from the script. Users must now set (Windows) or export (Mac) their API user ID and key in the command line before running `query_courseid.py`.
+   - Removed private credentials from the script. Users must use the export command to enter their API user ID and key in the command line before running `query_courseid.py (refactor_testing_query_courseid)` in the datahub terminal.
 
    **Datahub Terminal (bash)**:
    ```bash
@@ -12,7 +12,7 @@
    ```
     **Test enviornement credentential with:**
     ```bash
-    echo $APP_ID
+    echo $APP_ID 
     echo $APP_KEY
    ```
 
@@ -49,12 +49,13 @@ You can run the script in two ways:
 ## Questions for Consideration
 
 1. **Using `main` for `argparse`**:
-    - Is it acceptable to have the `refactor_testing_query_courseid.py` file implement `main` to handle `argparse`, or would you prefer not to include the `main` method inside this script?
+    - Is it acceptable to have the `refactor_testing_query_courseid.py` file implement `main` to handle `argparse`, or would  you prefer not to include the `main` method inside this script?
 
 
 2. **Interactive Input Option**:
     -Is it appropriate to keep the interactive input method for term ID and class names? This method could be useful for new users to understand the required arguments.
 
 
-4. **Class-Based Structure**:
-    -Would it be better to refactor the script to use a class with methods instead of standalone functions, considering that the primary method to be used by the user is `getCourseInformation`?
+4. **SWE Structure**:
+    - Adding another script that returns a more readable and a frendily output to use by data science from a jupyter notebook. This can work if I make the query script a parent of two scripts, one to use from the terminal and another to use a from jupyter notebook. These two child scripts can extend the main query script.
+    - I'm thinking to add a unit test script to test the most basic functionalities.
