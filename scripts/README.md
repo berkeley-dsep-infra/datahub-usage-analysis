@@ -3,26 +3,26 @@
 ## Updates
 
 1. **Credential Management**:
-   - Removed private credentials from the script. Users must use the export command to enter their API user ID and key in the command line before running `query_courseid.py (refactor_testing_query_courseid)` in the datahub terminal.
+   - Removed private credentials from the script. Users must now set (Windows) or export (Mac) their API user ID and key in the command line before running `query_courseid.py`.
 
-   **Datahub Terminal (bash)**:
+   **Datahub Terminal**:
    ```bash
-   export APP_ID='your_app_id' #no space between = sign
+   export APP_ID='your_app_id'
    export APP_KEY='your_app_key'
    ```
-    **Test enviornement credentential with:**
-    ```bash
-    echo $APP_ID 
+    **Verify Credentials From Terminal**:
+   ```bash
+    echo $APP_ID
     echo $APP_KEY
    ```
+   
 
-
-3. **Enhanced Script Structure**:
+2. **Enhanced Script Structure**:
 
     - Added a main function to handle argparse in an organized way.
     - The main function also allows for interactive input of the term ID and class names for testing purposes.
 
-4. **Multiple Class Names**:
+3. **Multiple Class Names**:
 
     - `getCourseInformation` can now accept multiple class names as arguments.
 
@@ -32,7 +32,31 @@ You can run the script in two ways:
 
 1. **Command-Line Mode**:
     ```bash
-    python refactor_testing_query_courseid.py 2242 data8 compsci189 data100 data140
+    python refactor_testing_query_courseid.py 2242 data8 data100 compsci189
+    ```
+Expected Output:
+
+{
+    "display_name": "2024 Spring DATA C8 001",
+    "department": "Data Science, Undergraduate",
+    "enrollment_count": 1287
+}
+{
+    "display_name": "2024 Spring DATA C100 001",
+    "department": "Data Science, Undergraduate",
+    "enrollment_count": 1132
+}
+{
+    "display_name": "2024 Spring COMPSCI 189 001",
+    "department": "Computer Science",
+    "enrollment_count": 704
+}
+{
+    "display_name": "2024 Spring COMPSCI 189 001",
+    "department": "Computer Science",
+    "enrollment_count": 704
+}
+(notebook) jovyan@jupyter-jlucarga:~/datahub-usage-analysis/scripts$ 
     ```
 
 2. **Interactive Mode**:
@@ -48,14 +72,5 @@ You can run the script in two ways:
         ```
 ## Questions for Consideration
 
-1. **Using `main` for `argparse`**:
-    - Is it acceptable to have the `refactor_testing_query_courseid.py` file implement `main` to handle `argparse`, or would  you prefer not to include the `main` method inside this script?
 
 
-2. **Interactive Input Option**:
-    -Is it appropriate to keep the interactive input method for term ID and class names? This method could be useful for new users to understand the required arguments.
-
-
-4. **SWE Structure**:
-    - Adding another script that returns a more readable and a frendily output to use by data science from a jupyter notebook. This can work if I make the query script a parent of two scripts, one to use from the terminal and another to use a from jupyter notebook. These two child scripts can extend the main query script.
-    - I'm thinking to add a unit test script to test the most basic functionalities.
