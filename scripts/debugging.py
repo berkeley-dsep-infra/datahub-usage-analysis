@@ -152,9 +152,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
 
 # Main function to handle command-line arguments and fetch course information
 def main():
-    """
-    Main function to handle command-line arguments or interactive input.
-    """
+    
     parser = argparse.ArgumentParser(description="Fetch course information based on term ID and class name.")
     parser.add_argument('term_id', type=int, nargs='?', default=2232, help="The term ID (e.g., '2232').")
     parser.add_argument('class_names', type=str, nargs='*', help="One or more class names (e.g., 'data8', 'compsci189').")
