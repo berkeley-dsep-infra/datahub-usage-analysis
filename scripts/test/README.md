@@ -20,7 +20,7 @@ python -c "import dotenv; print('dotenv is installed and working!')"
 4. **Run this in the terminal with replace “ “ with your own credentials**:
 ```bash
 export APP_ID='13eb564e'
-export APP_KEY='7558d2a629d4a40e2fede58c451b09a2'
+export APP_KEY=''
 export BASE_URL=https://gateway.api.berkeley.edu/uat/sis/v1/classes?
 ```
 
