@@ -45,7 +45,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
 
     # Get Course Information from API using the subject-area-code, term-id, page-number, and page-size
     base_url = "https://gateway.api.berkeley.edu/uat/sis/v1/classes?"
-    url_params = f"term-id={term_id}&subject-area-code={subject_area_code}&catalog-number={number}&page-number={page_number}&page-size={page_size}"
+    url_params = f"term-id={term_id}&subject-area-code={subject_area_code}&catalog-number={number}&page-number=  {page_number}&page-size={page_size}"
     full_url = base_url + url_params
 
     headersinput = {
@@ -69,6 +69,7 @@ def getCourseInformation(term_id, class_name, page_number=1, page_size=100):
         return_json = json.dumps(extracted_info, indent=4)
         print(return_json)
         return return_json
+        
     elif check_pattern(class_name) == True:
         desired_display_name = extract_pattern(class_name)
         subject_area_code = desired_display_name.split()[0].upper()
