@@ -1,19 +1,18 @@
 import re
 
 
-#Check if the input string contains any digits.
 def has_digits(input_string):
     """
+    Check if the input string contains any digits.
     Args: input_string (str): The input string.
     Returns: bool: True if the input string contains digits, False otherwise.
     """
     return any(char.isdigit() for char in input_string)
 
 
-
-#Extract the subject area code and catalog number from the class name.
 def extract_subject_area_and_number(class_name):
     """
+    Extract the subject area code and catalog number from the class name.
     Args: class_name (str): The class name.
     Returns: tuple: A tuple containing the subject area code and catalog number.
     """
@@ -24,9 +23,10 @@ def extract_subject_area_and_number(class_name):
     
     return subject_area_code, number
 
-#Construct URL parameters for the API request.
+
 def construct_url(term_id, subject_area_code, catalog_number, base_url, page_number=1, page_size=100):
     """
+    Construct URL parameters for the API request.
     Args:
         term_id (int): The term ID.
         subject_area_code (str): The subject area code.

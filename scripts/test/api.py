@@ -1,21 +1,35 @@
+import json
+import logging
 import os
 import requests
-import logging
-from dotenv import load_dotenv
 from helpers import extract_subject_area_and_number, construct_url
 
-# Load environment variables
-load_dotenv()
 
-BASE_URL = os.getenv('BASE_URL')
+BASE_URL = "https://gateway.api.berkeley.edu/uat/sis/v1/classes?"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 
-# Fetch course information from the Berkeley API, trying both with and without 'C' in the catalog number if needed.
+def extract_info_from_response(response):
+    """
+    Extracts course information from the API response.
+    Args: response (requests.Response): The API response object.
+    Returns: dict: The extracted course information.
+    """
+    data = response.json()['apiResponse']['response']
+    classes = data['classes']
+    extracted_info = {
+        "display_name": classes[0]['displayName'],
+        "department": classes[0]['course']['subjectArea']['description'],
+        "enrollment_count": sum(section['aggregateEnrollmentStatus']['enrolledCount'] for section in classes)
+    }
+    return extracted_info
+
+
 def fetch_course_info(term_id, class_name):
     """
+    Fetch course information from the Berkeley API, trying both with and without 'C' in the catalog number if needed.
     Args:
         term_id (int): The term ID.
         class_name (str): The class name.
@@ -40,14 +54,7 @@ def fetch_course_info(term_id, class_name):
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         if response.status_code == 200:
-            data = response.json()['apiResponse']['response']
-            classes = data['classes']
-            extracted_info = {
-                "display_name": classes[0]['displayName'],
-                "department": classes[0]['course']['subjectArea']['description'],
-                "enrollment_count": sum(section['aggregateEnrollmentStatus']['enrolledCount'] for section in classes)
-            }
-            return extracted_info
+            return extract_info_from_response(response)
 
     except requests.exceptions.RequestException:
         # If the initial fetch fails, try adding 'C' to the number
@@ -57,18 +64,23 @@ def fetch_course_info(term_id, class_name):
         try:
             response_with_c = requests.get(full_url_with_c, headers=headers)
             response_with_c.raise_for_status()  # Raise an exception for HTTP errors
-
-            if response_with_c.status_code == 200:
-                data = response_with_c.json()['apiResponse']['response']
-                classes = data['classes']
-                extracted_info = {
-                    "display_name": classes[0]['displayName'],
-                    "department": classes[0]['course']['subjectArea']['description'],
-                    "enrollment_count": sum(section['aggregateEnrollmentStatus']['enrolledCount'] for section in classes)
-                }
-                return extracted_info
+            return extract_info_from_response(response_with_c)
 
         except requests.exceptions.RequestException as e:
             logging.error(f"Failed to retrieve data. Error: {str(e)}")
             return {"error": f"Failed to retrieve data for the given class name: {class_name}"}
 
+
+def get_course_information(term_id, class_name):
+    """
+    Fetch course information from the Berkeley API.
+    Args:
+        term_id (int): The term ID.
+        class_name (str): The class name.
+    Returns: str: JSON string with extracted information or error message.
+    """ 
+    # Fetch the course information from the API
+    result = fetch_course_info(term_id, class_name)
+
+    # Return the result as a JSON string
+    return json.dumps(result, indent=4)
