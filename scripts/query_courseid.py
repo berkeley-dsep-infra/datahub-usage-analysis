@@ -1,6 +1,6 @@
-import requests
 import json
 import re
+import requests
 
 def has_digits(input_string):
     return any(char.isdigit() for char in input_string)
