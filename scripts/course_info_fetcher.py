@@ -6,7 +6,6 @@ import os
 
 from api import get_course_information
 
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
@@ -15,7 +14,9 @@ def main():
     """
     Main function to handle command-line arguments and fetch course information.
     """
-    parser = argparse.ArgumentParser(description="Fetch course information based on term ID and class name.")
+    parser = argparse.ArgumentParser(
+        description="Fetch course information based on term ID and class name."
+    )
     
     parser.add_argument('term_id',
                         type=int,

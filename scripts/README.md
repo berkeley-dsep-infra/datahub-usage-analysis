@@ -1,76 +1,58 @@
-## Datahub Usage Analysis (refactor_testing_query_courseid.py)
+## DataHub Usage Analysis (scripts/test)
 
-## Updates
+## Setup Instructions
 
-1. **Credential Management**:
-   - Removed private credentials from the script. Users must now set (Windows) or export (Mac) their API user ID and key in the command line before running `query_courseid.py`.
+1. **Change Directory to the `test` Folder inside the `scripts`**:
+```bash
+cd /datahub-usage-analysis/scripts/test
+```
 
-   **Datahub Terminal**:
-   ```bash
-   export APP_ID='your_app_id'
-   export APP_KEY='your_app_key'
-   ```
-    **Verify Credentials From Terminal**:
-   ```bash
-    echo $APP_ID
-    echo $APP_KEY
-   ```
-   
+2. **Run this in the terminal with replace “ “ with your own credentials**:
+```bash
+export APP_ID='13eb564e'
+export APP_KEY=''
+```
 
-2. **Enhanced Script Structure**:
+3. **You can run this to check if credential were correctly set**:
+```bash
+echo $APP_ID
+echo $APP_KEY
+```
 
-    - Added a main function to handle argparse in an organized way.
-    - The main function also allows for interactive input of the term ID and class names for testing purposes.
+4. **test by running these commands from the terminal**:
 
-3. **Multiple Class Names**:
+```bash
+python main.py data100 data8 compsci189
+```
+or intereactivately 
 
-    - `getCourseInformation` can now accept multiple class names as arguments.
+```bash
+python main.py
+```
+eg.:
+Please enter the term ID: 2242
+Please enter the class names (separated by commas): data100, data8, comopsci189
 
-## Usage
-
-You can run the script in two ways:
-
-1. **Command-Line Mode**:
-    ```bash
-    python refactor_testing_query_courseid.py 2242 data8 data100 compsci189
-    ```
-Expected Output:
+Expexted Output:
 
 {
-    "display_name": "2024 Spring DATA C8 001",
-    "department": "Data Science, Undergraduate",
-    "enrollment_count": 1287
+    "title": "Principles & Techniques of Data Science",
+    "display_name": "2024 Spring DATA C100 001 LEC 001",
+    "department": "Data Science Undergrad Studies",
+    "enrollment_count": 1132,
+    "instructor_PI": "'Joseph E. Gonzalez', 'Narges Norouzi'"
 }
 {
-    "display_name": "2024 Spring DATA C100 001",
-    "department": "Data Science, Undergraduate",
-    "enrollment_count": 1132
+    "title": "Foundations of Data Science",
+    "display_name": "2024 Spring DATA C8 001 LEC 001",
+    "department": "Data Science Undergrad Studies",
+    "enrollment_count": 1287,
+    "instructor_PI": "'Swupnil K Sahai', 'Muhammad R Khan'"
 }
 {
-    "display_name": "2024 Spring COMPSCI 189 001",
-    "department": "Computer Science",
-    "enrollment_count": 704
+    "title": "Introduction to Machine Learning",
+    "display_name": "2024 Spring COMPSCI 189 001 LEC 001",
+    "department": "Electrical Eng & Computer Sci",
+    "enrollment_count": 704,
+    "instructor_PI": "'Jonathan Shewchuk'"
 }
-{
-    "display_name": "2024 Spring COMPSCI 189 001",
-    "department": "Computer Science",
-    "enrollment_count": 704
-}
-(notebook) jovyan@jupyter-jlucarga:~/datahub-usage-analysis/scripts$ 
-    ```
-
-2. **Interactive Mode**:
-    - Run the script without arguments and follow the prompts:
-        ```bash
-        python refactor_testing_query_courseid.py
-        ```
-
-    - You will be prompted to enter the term ID and class names:
-        ```text
-        Please enter the term ID: ... (eg: 2242)
-        Please enter the class names (separated by commas): ... (eg: data8, compsci189)
-        ```
-## Questions for Consideration
-
-
-

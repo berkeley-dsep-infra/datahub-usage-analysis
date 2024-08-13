@@ -5,28 +5,38 @@ import requests
 
 from helpers import extract_subject_area_and_number, construct_url
 
-
-BASE_URL = "https://gateway.api.berkeley.edu/uat/sis/v1/classes?"
+BASE_URL = "https://gateway.api.berkeley.edu/uat/sis/v1/classes/sections?"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 
 def extract_info_from_response(response):
-    """
-    Extracts course information from the API response.
-    Args: response (requests.Response): The API response object.
-    Returns: dict: The extracted course information.
-    """
     data = response.json()['apiResponse']['response']
-    classes = data['classes']
-    extracted_info = {
-        "display_name": classes[0]['displayName'],
-        "department": classes[0]['course']['subjectArea']['description'],
-        "enrollment_count": sum(section['aggregateEnrollmentStatus']['enrolledCount'] for section in classes)
-    }
-    return extracted_info
+    class_section = data.get('classSections', [])[0]
 
+    # Extract title, department, display name, and enrollment count
+    title = class_section.get('class', {}).get('course', {}).get('title', 'N/A')
+    display_name = class_section.get('displayName', 'N/A')
+    department = class_section.get('academicOrganization', {}).get('description', 'N/A')
+    enrollment_count = class_section.get('enrollmentStatus', {}).get('enrolledCount', 0)
+
+    # Extract primary instructors names
+    instructor_PI = ', '.join(
+        f"'{instructor['instructor']['names'][0]['formattedName']}'"
+        for meeting in class_section.get('meetings', [])
+        for instructor in meeting.get('assignedInstructors', [])
+        if instructor.get('role', {}).get('code') == 'PI'
+    )
+
+    return {
+        "title": title,
+        "display_name": display_name,
+        "department": department,
+        "enrollment_count": enrollment_count,
+        "instructor_PI": instructor_PI
+    }
+    
 
 def fetch_course_info(term_id, class_name):
     """
@@ -36,12 +46,12 @@ def fetch_course_info(term_id, class_name):
         class_name (str): The class name.
     Returns: dict: The extracted course information or an error message.
     """
-    app_id = os.getenv('APP_ID')
-    app_key = os.getenv('APP_KEY')
+    api_id = os.getenv('APP_ID')
+    api_key = os.getenv('APP_KEY')
 
     headers = {
-        "app_id": app_id,
-        "app_key": app_key,
+        "app_id": api_id,
+        "app_key": api_key,
     }
 
     # Extract the subject area code and number part from the class name
