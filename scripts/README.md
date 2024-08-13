@@ -22,12 +22,12 @@ echo $APP_KEY
 4. **test by running these commands from the terminal**:
 
 ```bash
-python main.py data100 data8 compsci189
+python course_info_fetcher.py data100 data8 compsci189
 ```
 or intereactivately 
 
 ```bash
-python main.py
+python course_info_fetcher.py
 ```
 eg.:
 Please enter the term ID: 2242
