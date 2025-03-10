@@ -1,0 +1,42 @@
+name: Convert qmd to html
+
+on:
+  push:
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install quarto
+
+      - name: Convert qmd to html
+        run: |
+          mkdir -p dashboard/visualization_output
+          for qmd in $(find . -name "*.qmd"); do
+            quarto render $qmd --to html --output-dir dashboard/visualization_output
+          done
+
+      - name: Publish to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          path: dashboard/visualization_output
+          render: false
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
